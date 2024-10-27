@@ -31,40 +31,33 @@ class RegisterSerializer(serializers.Serializer):
                 return attrs
       
     def create(self, validated_data):
-        user = User.objects.create_user(email=validated_data['email'], 
-                                        password=validated_data['password'])
+        user = User.objects.create_user(email=validated_data['email'],  password=validated_data['password'])
         user.save()
         return {
             "message": "User Created Successfully",
             "tokens" : user.get_tokens
         }
         
-
+      
           
 class LoginSerializer(serializers.Serializer):
     
-    message= serializers.CharField(read_only=True)
     email = serializers.EmailField(max_length=255, write_only=True)
     password = serializers.CharField(write_only=True, min_length=8)
     tokens = serializers.JSONField(read_only=True)
     
-    def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
         email = normalize_email(email)
-        try:
-            user = User.objects.get(email__iexact = email)
-        except:
-
-            raise serializers.ValidationError({"error":"Invalid user"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not User.objects.filter(email = email).exists():
+         raise serializers.ValidationError({"error":"Invalid user"})
       
-        user = authenticate(
-            email=email,
-            password=password
-        )
+        user = authenticate(email=email,password=password )
         
         if not user:
-            raise serializers.ValidationError({"error":"Incorrect Credentials"}, status=status.HTTP_404_NOT_FOUND)
+            raise serializers.ValidationError({"error":"Incorrect Credentials"})
 
         return {
             'message': "Login Successful",
@@ -73,8 +66,8 @@ class LoginSerializer(serializers.Serializer):
  
 class SendOTPSerializer(serializers.Serializer):
     
-    email = serializers.EmailField(write_only=True)
-    def create(self, validated_data):
+    email = serializers.EmailField()
+    def validate(self, validated_data):
         email = validated_data['email']
         email = normalize_email(email)
        
