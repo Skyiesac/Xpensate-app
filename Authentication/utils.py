@@ -29,7 +29,7 @@ Do not share your otp with anyone.
      return send_mail(subject, message, from_email , recipient_list)
 
 
-def send_otp_via_mail(email , otp):
+def send_verify_mail(email , otp):
      subject="Verifying your Registeration"
      message= f"""
 Hello,

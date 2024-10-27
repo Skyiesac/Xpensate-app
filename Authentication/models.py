@@ -87,4 +87,9 @@ class EmailOTP(models.Model):
         return f"{self.email}"
    
     
+class Register_user(models.Model):
+    email = models.EmailField(max_length=255, unique=True)
+    created_time = models.DateTimeField(auto_now_add=True)
+    password = models.CharField(max_length = 8)
+    otp = models.IntegerField(blank=True, null=True)
     
