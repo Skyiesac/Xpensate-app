@@ -96,9 +96,6 @@ DATABASES = {
     }
 }
 
-#DATABASES["default"]= dj_database_url.parse("postgresql://xpensate_django_user:vdU0MluaWj2VKnoT1kQBeBSAI3qjrlRZ@dpg-csfhjo9u0jms73fg4kdg-a.oregon-postgres.render.com/xpensate_django")
-#postgresql://xpensate_django_user:vdU0MluaWj2VKnoT1kQBeBSAI3qjrlRZ@dpg-csfhjo9u0jms73fg4kdg-a.oregon-postgres.render.com/xpensate_django
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
@@ -155,5 +152,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_USER = 'jainsachi1202@gmail.com'
+EMAIL_HOST_PASSWORD = 'exfddqauijpynugc'
