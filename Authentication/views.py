@@ -22,3 +22,16 @@ class LoginAPIView(APIView):
 class VerifyRegisterView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = VerifyRegisterSerializer
+
+class ForgetPassword(UpdateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ForgetPassSerializer
+    
+
+# class ResetPassView(UpdateAPIView):
+#     permission_classes = [AllowAny]
+#     serializer_class = ResetPassSerializer
+    
+#     def patch(self, request, *args, **kwargs):
+#         self.update(request,*args, **kwargs)
+#         return Response({'messsage':['Password changed successfully']}, status=status.HTTP_200_OK)

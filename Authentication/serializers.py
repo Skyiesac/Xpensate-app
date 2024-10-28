@@ -16,39 +16,34 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self , attrs):
       if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Password aren't matching."})
-      self.otpsend(attrs)
+      otpto = self.otpsend(attrs)
+      attrs['otp']=otpto
       return attrs
-    
-    print(1)
+   
     def otpsend(self, attrs):
         otpto = random.randint(1000, 9999)
-        send_verify_mail(attrs['email'],otpto)
-        user = Register_user.objects.filter(
-            email= attrs['email']).update(otp=otpto)
-       
-        return {'message' : 'OTP sent on email'}
+        send_verify_mail(attrs['email'], otpto)
+        return otpto
 
 
 class VerifyRegisterSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    
     otp = serializers.IntegerField()
     
     def validate(self, data):
-        try:
-            user = Register_user.objects.get(email=data['email'])
-        except Register_user.DoesNotExist:
-            raise serializers.ValidationError({"error": "User does not exist."})
-
-        if user.otp != data['otp']:
+        otpt=self.context.get('otp')
+        print(otpt)
+        if self.context.get('otp') != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
-     
-        data['instance'] = user
-        return data
-
+        else:
+            return {
+            "message" : "verified" }
+        
     def create(self, data):
-        user = Register_user.objects.get(email = data['email'])
+        email=self.context.get('email')
+        user = Register_user.objects.get(email = email)
         User.objects.create(
-            email = data['email'],
+            email = email,
             password = user.password )
         User.save()
         data['instance'].delete()
@@ -68,7 +63,7 @@ class LoginSerializer(serializers.Serializer):
         
         if not User.objects.filter(email = email).exists():
          raise serializers.ValidationError({"error":"Invalid user"})
-      
+        
         user = authenticate(email=email,password=password )
         
         if not user:
@@ -76,6 +71,18 @@ class LoginSerializer(serializers.Serializer):
 
         return {
             'message': "Login Successful",
-            'tokens': user.get_tokens,
         }
+
+class ForgetPassSerializer(serializers.Serializer):
+    email = serializers.EmailField(write_only = True)
+
+    def validate(self, email):
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"error":"User doesn't exist"})
+        
+    def sendotp(self, attrs):
+        otpto = random.randint(1000, 9999)
+        otp_for_reset(attrs['email'], otpto)
+        
+        return { "message": "Email sent successfully"}
     
