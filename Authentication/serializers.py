@@ -3,7 +3,7 @@ from rest_framework import serializers, status
 from django.utils import timezone
 from rest_framework.response import Response
 from datetime import timedelta
-from .models import User, EmailOTP ,Register_user 
+from .models import User, Register_user 
 from django.core.validators import MinLengthValidator
 from .utils import *
 import random
@@ -16,18 +16,16 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self , attrs):
       if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Password aren't matching."})
+      self.otpsend(attrs)
+      return attrs
     
-      try:
-          User.objects.get(email= attrs['email'])
-      except:
-         raise serializers.ValidationError({'error':'Email already exists'})
-      
     print(1)
-    def otp(self, attrs):
-        otp = random.randint(1000, 9999)
-        User.otp = otp
-        print(2)
-        send_verify_mail(attrs['email'],otp)
+    def otpsend(self, attrs):
+        otpto = random.randint(1000, 9999)
+        send_verify_mail(attrs['email'],otpto)
+        user = Register_user.objects.filter(
+            email= attrs['email']).update(otp=otpto)
+       
         return {'message' : 'OTP sent on email'}
 
 
@@ -37,9 +35,10 @@ class VerifyRegisterSerializer(serializers.Serializer):
     
     def validate(self, data):
         try:
-            user = Register_user.objects.get(email = data['email'])
-        except:
-            raise serializers.ValidationError({"error":" Generate OTP"})
+            user = Register_user.objects.get(email=data['email'])
+        except Register_user.DoesNotExist:
+            raise serializers.ValidationError({"error": "User does not exist."})
+
         if user.otp != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
      
@@ -47,13 +46,13 @@ class VerifyRegisterSerializer(serializers.Serializer):
         return data
 
     def create(self, data):
-        obj = User.objects.create(
+        user = Register_user.objects.get(email = data['email'])
+        User.objects.create(
             email = data['email'],
-            password = (data['password']),
-        )
-        data['instance'].delete()
+            password = user.password )
         User.save()
-        return data
+        data['instance'].delete()
+        return User
           
 
 class LoginSerializer(serializers.Serializer):
