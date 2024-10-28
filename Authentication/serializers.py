@@ -4,14 +4,19 @@ from django.utils import timezone
 from rest_framework.response import Response
 from datetime import timedelta
 from .models import User, EmailOTP ,Register_user 
+from django.core.validators import MinLengthValidator
 from .utils import *
 import random
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Register_user
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'confirm_password']
+
     def validate(self , attrs):
+      if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"password": "Password aren't matching."})
+    
       try:
           User.objects.get(email= attrs['email'])
       except:

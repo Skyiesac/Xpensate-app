@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -95,6 +96,8 @@ DATABASES = {
     }
 }
 
+#DATABASES["default"]= dj_database_url.parse("postgresql://xpensate_django_user:vdU0MluaWj2VKnoT1kQBeBSAI3qjrlRZ@dpg-csfhjo9u0jms73fg4kdg-a.oregon-postgres.render.com/xpensate_django")
+#postgresql://xpensate_django_user:vdU0MluaWj2VKnoT1kQBeBSAI3qjrlRZ@dpg-csfhjo9u0jms73fg4kdg-a.oregon-postgres.render.com/xpensate_django
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=30),

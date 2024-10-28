@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.validators import MinLengthValidator
 
 class UserManager(BaseUserManager):
     def create_user(self, email,password=None):
@@ -90,6 +91,7 @@ class EmailOTP(models.Model):
 class Register_user(models.Model):
     email = models.EmailField(max_length=255, unique=True)
     created_time = models.DateTimeField(auto_now_add=True)
-    password = models.CharField(max_length = 8)
+    password = models.CharField(max_length=50,null=True, validators=[MinLengthValidator(8,'Password must have 8 letters')])
+    confirm_password = models.CharField(max_length=50,null=True,validators=[MinLengthValidator(8,'Password must have 8 letters')])
     otp = models.IntegerField(blank=True, null=True)
     
