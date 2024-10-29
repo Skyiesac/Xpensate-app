@@ -20,15 +20,23 @@ class LoginAPIView(APIView):
         user = serializer.validated_data['user']
         return Response({ **{'message' : ['Login Successful']}, **serializer.data}, status=status.HTTP_200_OK)
 
-class VerifyOTPView(CreateAPIView):
+class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = VerifyOTPSerializer
 
-class ForgetPassword(CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        serializer = VerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'message' : ['OTP Verified']}, status=status.HTTP_200_OK)
+
+
+class ForgetPassword(APIView):
     permission_classes = [AllowAny]
-    serializer_class = ForgetPassSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = ForgetPassSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'message' : ['OTP sent on email']}, status=status.HTTP_200_OK)
+
     
-
 class ResetPassView(UpdateAPIView):
     permission_classes = [AllowAny]
     serializer_class = ResetPassSerializer

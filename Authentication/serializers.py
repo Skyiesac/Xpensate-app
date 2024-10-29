@@ -37,6 +37,10 @@ class VerifyOTPSerializer(serializers.Serializer):
     otp = serializers.IntegerField()
     
     def validate(self, data):
+        try:
+          user= EmailOTP.objects.get(email= data['email'])
+        except:
+          raise serializers.ValidationError({'error':'Invalid user'})
         user= EmailOTP.objects.get(email= data['email'])
         otph = user.otp
         print(otph)
@@ -126,9 +130,9 @@ class ResetPassSerializer(serializers.Serializer):
            raise serializers.ValidationError({"password": "Password should not be blank"})
         if attrs['new_password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Passwords do not match."})
-         
-        user = User.objects.get(email=attrs['email'])
-        if user is None:
+        try:
+          user = User.objects.get(email=attrs['email'])
+        except:
             raise serializers.ValidationError({"error": "User with this email does not exist."})
         attrs['user']=user
         return attrs
