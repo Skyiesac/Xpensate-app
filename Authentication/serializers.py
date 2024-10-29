@@ -71,20 +71,18 @@ class LoginSerializer(serializers.Serializer):
         email = data['email']
         email = normalize_email(email)
         
-        user = User.objects.filter(email = email).first()
+        user = User.objects.filter(email = email).exists()
         if not user:
          raise serializers.ValidationError({"error":"Invalid user"})
         
-        print(f"Attempting to authenticate user: {email} password : {User.password}")
-        user = authenticate(email=email,password=data['password'] )
         
-        if not user:
+        usert = authenticate(email=email,password=data['password'] )
+        
+        if not usert:
             raise serializers.ValidationError({"error":"Incorrect Credentials"})
-        
-        return {
-            'message': "Login Successful",
-        }
-
+        data['user']=usert
+        return data
+    
 class ForgetPassSerializer(serializers.Serializer):
     email = serializers.EmailField(write_only = True)
 

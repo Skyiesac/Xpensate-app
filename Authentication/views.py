@@ -17,6 +17,7 @@ class LoginAPIView(APIView):
    def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data = request.data)
         serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
         return Response({ **{'message' : ['Login Successful']}, **serializer.data}, status=status.HTTP_200_OK)
 
 class VerifyRegisterView(CreateAPIView):

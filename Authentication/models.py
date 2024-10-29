@@ -15,6 +15,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
         )
+
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -48,7 +49,21 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return f"{self.email}"
+    
+    def has_perm(self, perm, obj=None):
+        return True
 
+    def has_module_perms(self, app_label):
+        return True
+
+    @property
+    def is_staff(self):
+        return self.is_admin
+    
+    @property
+    def is_Active(self):
+        return self.is_active
+    
     @property
     def get_tokens(self):
         refresh = RefreshToken.for_user(self)
