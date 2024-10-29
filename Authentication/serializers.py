@@ -42,10 +42,10 @@ class VerifyOTPSerializer(serializers.Serializer):
         print(otph)
         if otph != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
-        if user.forgot == False:
-         self.create_us( data)
-        else:
+        if user.forgot:
             self.forgot_us(data)
+        else:
+            self.create_us(data)
         return {
             "message" : "verified" }
         
