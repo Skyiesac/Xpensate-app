@@ -12,6 +12,6 @@ urlpatterns = [
     path('login/', LoginAPIView.as_view()),
     # path('otpsend/', SendOTP.as_view()),
     # path('otpverify/', VerifyOTP.as_view()),
-  #   path('passforget/', ForgetPassword.as_view()),
+   path('passforget/', ForgetPassword.as_view()),
    
 ]
