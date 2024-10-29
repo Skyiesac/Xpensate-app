@@ -79,7 +79,7 @@ class EmailOTP(models.Model):
     
     otp = models.IntegerField(null=True, blank=True)
     otp_created_at = models.DateTimeField(auto_now=True)
-    
+    forgot=models.BooleanField(default= False, blank= True)
     def __str__(self):
         return f"{self.email}"
    

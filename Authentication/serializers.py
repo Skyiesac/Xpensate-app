@@ -14,8 +14,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'confirm_password']
 
     def validate(self , attrs):
+      if attrs['password'] is None:
+           raise serializers.ValidationError({"password": "Password should not be blank"})
       if attrs['password'] != attrs['confirm_password']:
-            raise serializers.ValidationError({"password": "Password aren't matching."})
+           raise serializers.ValidationError({"password": "Password aren't matching."})
       otpto = self.otpsend(attrs)
       EmailOTP.objects.update_or_create(
             email= attrs['email'],
@@ -30,7 +32,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return otpto
 
 
-class VerifyRegisterSerializer(serializers.Serializer):
+class VerifyOTPSerializer(serializers.Serializer):
     email= serializers.CharField()
     otp = serializers.IntegerField()
     
@@ -40,11 +42,14 @@ class VerifyRegisterSerializer(serializers.Serializer):
         print(otph)
         if otph != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
+        if user.forgot == False:
+         self.create_us( data)
         else:
-            self.create_us( data)
-            return {
+            self.forgot_us(data)
+        return {
             "message" : "verified" }
         
+    #when otp is to register    
     def create_us(self, data):
         user, created = User.objects.get_or_create(
             email=data['email'],
@@ -61,6 +66,12 @@ class VerifyRegisterSerializer(serializers.Serializer):
             'message': 'User created successfully'
         }
           
+    #when otp is to reset password
+    def forgot_us(self , data):
+        EmailOTP.objects.filter(email=data['email']).delete()
+        return{
+            'message' : 'User verified successfully'
+        }
 
 class LoginSerializer(serializers.Serializer):
     
@@ -86,14 +97,45 @@ class LoginSerializer(serializers.Serializer):
 class ForgetPassSerializer(serializers.Serializer):
     email = serializers.EmailField(write_only = True)
 
-    def validate(self, email):
-       user= User.objects.filter(email=email).exists()
+    def validate(self, data):
+       user= User.objects.filter(email=data['email']).exists()
        if not user:
            raise serializers.ValidationError({"error":"User doesn't exist"})
+       otpto= self.sendotp( data)
+       EmailOTP.objects.update_or_create(
+            email= data['email'],
+            defaults={'otp':otpto},
+            forgot =True
+        )
+       return data
         
     def sendotp(self, attrs):
         otpto = random.randint(1000, 9999)
         otp_for_reset(attrs['email'], otpto)
         
-        return { "message": "Email sent successfully"}
+        return otpto
     
+
+class ResetPassSerializer(serializers.Serializer):
+     email= serializers.EmailField()
+     new_password = serializers.CharField(min_length=8)
+     confirm_password = serializers.CharField(min_length=8)
+
+     def validate(self, attrs):
+        if attrs['new_password'] is None:
+           raise serializers.ValidationError({"password": "Password should not be blank"})
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+         
+        user = User.objects.get(email=attrs['email'])
+        if user is None:
+            raise serializers.ValidationError({"error": "User with this email does not exist."})
+        attrs['user']=user
+        return attrs
+        
+     def save(self):
+            user = self.validated_data['user']
+            user.set_password(self.validated_data['new_password'])
+            user.save()
+            return user 
+

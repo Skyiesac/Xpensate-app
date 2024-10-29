@@ -20,19 +20,21 @@ class LoginAPIView(APIView):
         user = serializer.validated_data['user']
         return Response({ **{'message' : ['Login Successful']}, **serializer.data}, status=status.HTTP_200_OK)
 
-class VerifyRegisterView(CreateAPIView):
+class VerifyOTPView(CreateAPIView):
     permission_classes = [AllowAny]
-    serializer_class = VerifyRegisterSerializer
+    serializer_class = VerifyOTPSerializer
 
 class ForgetPassword(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = ForgetPassSerializer
     
 
-# class ResetPassView(UpdateAPIView):
-#     permission_classes = [AllowAny]
-#     serializer_class = ResetPassSerializer
+class ResetPassView(UpdateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ResetPassSerializer
     
-#     def patch(self, request, *args, **kwargs):
-#         self.update(request,*args, **kwargs)
-#         return Response({'messsage':['Password changed successfully']}, status=status.HTTP_200_OK)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'messsage':['Password changed successfully']}, status=status.HTTP_200_OK)
