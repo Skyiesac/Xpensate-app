@@ -19,6 +19,7 @@ def otp_for_reset(email,otp):
      message = f"""
 Your OTP to reset your password for Xpensate app is:
 {otp}
+This OTP is valid only for 5 minutes.
 Do not share your otp with anyone.
 -Xpensate
 """
@@ -36,6 +37,7 @@ Hello,
 This mail is sent to you by team Xpensate for confirming your registeration on the application.
 OTP for verification is-
 OTP = {otp}.
+This OTP is valid for only 5 minutes.
 Do not share your otp with anyone.
 -Xpensate
 """

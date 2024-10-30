@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers, status
 from django.utils import timezone
 from rest_framework.response import Response
+from django.utils import timezone
 from datetime import timedelta
 from .models import User, Register_user , EmailOTP
 from django.core.validators import MinLengthValidator
@@ -18,11 +19,17 @@ class RegisterSerializer(serializers.ModelSerializer):
            raise serializers.ValidationError({"password": "Password should not be blank"})
       if attrs['password'] != attrs['confirm_password']:
            raise serializers.ValidationError({"password": "Password aren't matching."})
+      if User.objects.filter(email=attrs['email']):
+         raise serializers.ValidationError({"Error":"User with this email already exists"})
+      if Register_user.objects.filter(email=attrs['email']):
+         raise serializers.ValidationError({"Error":"User with this email already registered"})
+     
       otpto = self.otpsend(attrs)
       EmailOTP.objects.update_or_create(
             email= attrs['email'],
             otp=otpto
         )
+      EmailOTP.objects.get(email=attrs['email']).delete_after5()
       return attrs
    
     def otpsend(self, attrs):
@@ -42,10 +49,13 @@ class VerifyOTPSerializer(serializers.Serializer):
         except:
           raise serializers.ValidationError({'error':'Invalid user'})
         user= EmailOTP.objects.get(email= data['email'])
+
         otph = user.otp
         print(otph)
         if otph != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
+        if user.otp_created_at + timedelta(minutes=5)< timezone.now() :
+            raise serializers.ValidationError({'error':'OTP expired, Resend OTP'})
         if user.forgot:
             self.forgot_us(data)
         else:
@@ -55,6 +65,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         
     #when otp is to register    
     def create_us(self, data):
+        
         user, created = User.objects.get_or_create(
             email=data['email'],
             defaults={'password': Register_user.objects.get(email=data['email']).password}
@@ -75,6 +86,20 @@ class VerifyOTPSerializer(serializers.Serializer):
         EmailOTP.objects.filter(email=data['email']).delete()
         return{
             'message' : 'User verified successfully'
+        }
+    
+    def resend(self, attrs):
+        otpto= random.randint(1000,9999)
+        user= EmailOTP.objects.update_or_create(
+            email= attrs['email'],
+            otp=otpto
+        )
+        if user.forgot:
+            send_verify_mail(attrs['email'], otpto)
+        else:
+           otp_for_reset(attrs['email'], otpto)
+        return{
+            'message':'OTP Resent'
         }
 
 class LoginSerializer(serializers.Serializer):
@@ -106,11 +131,12 @@ class ForgetPassSerializer(serializers.Serializer):
        if not user:
            raise serializers.ValidationError({"error":"User doesn't exist"})
        otpto= self.sendotp( data)
-       EmailOTP.objects.update_or_create(
+       instance= EmailOTP.objects.update_or_create(
             email= data['email'],
             defaults={'otp':otpto},
             forgot =True
         )
+       EmailOTP.objects.get(email= data['email']).delete_after5()
        return data
         
     def sendotp(self, attrs):
@@ -142,4 +168,3 @@ class ResetPassSerializer(serializers.Serializer):
             user.set_password(self.validated_data['new_password'])
             user.save()
             return user 
-
