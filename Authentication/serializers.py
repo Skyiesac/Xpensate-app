@@ -8,12 +8,13 @@ from .models import User, Register_user , EmailOTP
 from django.core.validators import MinLengthValidator
 from .utils import *
 import random
+from django.contrib.auth.hashers import make_password
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Register_user
         fields = ['email', 'password', 'confirm_password']
-
+    #  message= serializers.CharField(read_only=True)
     def validate(self , attrs):
       if attrs['password'] is None:
            raise serializers.ValidationError({"password": "Password should not be blank"})
@@ -31,11 +32,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             email= attrs['email'],
             otp=otpto
         )
-      EmailOTP.objects.get(email=attrs['email']).delete_after5()
-      return{
-          "message":" Verify OTP to register successfully !"
-      }
-   
+      return attrs
+    
+    def create(self, validated_data):
+        # Removing confirm_password
+        validated_data.pop('confirm_password', None)
+        # Hash the password
+        validated_data['password'] = make_password(validated_data['password'])
+        user = Register_user.objects.create(**validated_data)
+        return user
+
     def otpsend(self, attrs):
         otpto = random.randint(1000, 9999)
         send_verify_mail(attrs['email'], otpto)
@@ -46,6 +52,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class VerifyOTPSerializer(serializers.Serializer):
     email= serializers.CharField()
     otp = serializers.IntegerField()
+    message= serializers.CharField(read_only=True)
     tokens = serializers.JSONField(read_only=True)
     def validate(self, data):
         try:
@@ -55,14 +62,12 @@ class VerifyOTPSerializer(serializers.Serializer):
         user= EmailOTP.objects.get(email= data['email'])
 
         otph = user.otp
-        print(otph)
         if otph != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
         if user.otp_created_at + timedelta(minutes=5)< timezone.now() :
            raise serializers.ValidationError({'error':'OTP expired, Resend OTP'})
-        self.create_us(data)
-        return {
-            "message" : "verified" }
+        return self.create_us(data)
+        
         
     #when otp is to register    
     def create_us(self, data):
@@ -103,19 +108,19 @@ class LoginSerializer(serializers.Serializer):
     tokens = serializers.JSONField(read_only=True)
 
     def validate(self, data):
-        print(1)
+       
         email = data['email']
         email = normalize_email(email)
         try:
          user = User.objects.get(email=email)
         except:
          raise serializers.ValidationError({"error":"Invalid user"})
-        print(2)
+        
         usert = authenticate(email=email,password=data['password'] )
         
         if not usert:
             raise serializers.ValidationError({"error":"Incorrect Credentials"})
-        print(6)
+       
         
         # data['message']= "Login Successful",
         # data['tokens']= user.get_tokens(),
@@ -128,7 +133,7 @@ class LoginSerializer(serializers.Serializer):
     
 class ForgetPassSerializer(serializers.Serializer):
     email = serializers.EmailField(write_only = True)
-
+    message= serializers.CharField(read_only=True)
     def validate(self, data):
        user= User.objects.filter(email=data['email']).exists()
        if not user:
@@ -145,13 +150,14 @@ class ForgetPassSerializer(serializers.Serializer):
         otp_for_reset(attrs['email'], otpto)
         
         return otpto
+   
     
 
 class ResetPassSerializer(serializers.Serializer):
      email= serializers.EmailField()
      otp = serializers.IntegerField()
      new_password = serializers.CharField(min_length=8)
-     
+     message= serializers.CharField(read_only=True)
      def validate(self, attrs):
         if attrs['new_password'] is None:
            raise serializers.ValidationError({"password": "Password should not be blank"})

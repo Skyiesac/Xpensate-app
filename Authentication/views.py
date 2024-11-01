@@ -5,22 +5,24 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import User
-{
-"email":"skyyyy1y@gmail.com",
-"password":"skyispretty"
-}
-    
+ 
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        user = serializer.save()
+        return Response({"message": "Verify OTP to register successfully!"}, status=status.HTTP_201_CREATED)
     
 class LoginAPIView(APIView):
    permission_classes = [AllowAny]
-   print(4)
+ 
    def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data = request.data)
         serializer.is_valid(raise_exception=True)
-        print(5)
+       
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 class VerifyOTPView(APIView):
@@ -37,7 +39,7 @@ class ForgetPassword(APIView):
     def post(self, request, *args, **kwargs):
         serializer = ForgetPassSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'message':'OTP sent on mail'}, status=status.HTTP_200_OK)
 
     
 class ResetPassView(UpdateAPIView):
