@@ -1,5 +1,6 @@
 
 from django.core.mail import send_mail
+import re
 from django.conf import settings
 from xpensateapp.settings import EMAIL_HOST_USER
                 
@@ -14,6 +15,7 @@ def normalize_email(email):
             email = '@'.join([email_name, domain_part.lower()])
         return email
     
+
 def otp_for_reset(email,otp):
      subject="OTP to Reset Password "
      message = f"""
@@ -50,3 +52,13 @@ Do not share your otp with anyone.
         print("Email sent successfully.")
      except Exception as e:
         print(f"Error sending email: {e}") 
+
+def strong_pass(password):
+        if (len(password) < 8 or 
+            (not re.findall('\d', password)) or 
+            (not re.findall('[A-Z]', password)) or 
+            (not re.findall('[a-z]', password))or 
+            (not re.findall('[!@#$%&*]', password))):
+            return False
+        else:
+            return True

@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.core.validators import MinLengthValidator
 from django.utils import timezone
 from celery import shared_task 
-
+from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.authentication import JWTAuthentication
 class UserManager(BaseUserManager):
     def create_user(self, email,password=None):
         
@@ -66,7 +67,7 @@ class User(AbstractBaseUser):
     def is_Active(self):
         return self.is_active
     
-    @property
+
     def get_tokens(self):
         refresh = RefreshToken.for_user(self)
         refresh['email'] = self.email

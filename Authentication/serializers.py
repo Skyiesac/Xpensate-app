@@ -19,6 +19,8 @@ class RegisterSerializer(serializers.ModelSerializer):
            raise serializers.ValidationError({"password": "Password should not be blank"})
       if attrs['password'] != attrs['confirm_password']:
            raise serializers.ValidationError({"password": "Password aren't matching."})
+      if not strong_pass(attrs['password']):
+          raise serializers.ValidationError({"password": "Password is not strong enough."})
       if User.objects.filter(email=attrs['email']):
          raise serializers.ValidationError({"Error":"User with this email already exists"})
       if Register_user.objects.filter(email=attrs['email']):
@@ -57,7 +59,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         if otph != data['otp']:
             raise serializers.ValidationError({'error':'Invalid OTP'})
         if user.otp_created_at + timedelta(minutes=5)< timezone.now() :
-            raise serializers.ValidationError({'error':'OTP expired, Resend OTP'})
+           raise serializers.ValidationError({'error':'OTP expired, Resend OTP'})
         self.create_us(data)
         return {
             "message" : "verified" }
@@ -77,8 +79,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         EmailOTP.objects.filter(email=data['email']).delete()
         Register_user.objects.filter(email= data['email']).delete()
         return {
-            'message': 'User created successfully',
-            "tokens": user.get_tokens
+            'message': "User created successfully",
+            "tokens": user.get_tokens()
         }
         
     def resend(self, attrs):
@@ -95,29 +97,34 @@ class VerifyOTPSerializer(serializers.Serializer):
         }
 
 class LoginSerializer(serializers.Serializer):
-    
+    message= serializers.CharField(read_only=True)
     email = serializers.EmailField(max_length=255)
     password = serializers.CharField(write_only=True)
     tokens = serializers.JSONField(read_only=True)
 
     def validate(self, data):
+        print(1)
         email = data['email']
         email = normalize_email(email)
-        
-        user = User.objects.filter(email = email).exists()
-        if not user:
+        try:
+         user = User.objects.get(email=email)
+        except:
          raise serializers.ValidationError({"error":"Invalid user"})
-        
-        
+        print(2)
         usert = authenticate(email=email,password=data['password'] )
         
         if not usert:
             raise serializers.ValidationError({"error":"Incorrect Credentials"})
-        data['user']=usert
-        return{
+        print(6)
+        
+        # data['message']= "Login Successful",
+        # data['tokens']= user.get_tokens(),
+        # return data
+        return {
             'message': "Login Successful",
-            "tokens": user.get_tokens,
+            'tokens': user.get_tokens(),
         }
+
     
 class ForgetPassSerializer(serializers.Serializer):
     email = serializers.EmailField(write_only = True)
@@ -148,6 +155,8 @@ class ResetPassSerializer(serializers.Serializer):
      def validate(self, attrs):
         if attrs['new_password'] is None:
            raise serializers.ValidationError({"password": "Password should not be blank"})
+        if not strong_pass(attrs['new_password']):
+            raise serializers.ValidationError({"password": "Password isn't strong enough."})
         try:
           user = User.objects.get(email=attrs['email'])
         except:
