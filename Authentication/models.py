@@ -85,9 +85,7 @@ class EmailOTP(models.Model):
     forgot=models.BooleanField(default= False, blank= True)
     def __str__(self):
         return f"{self.email}"
-    def delete_after5(self):
-        delete_otp_users.apply_async((self.email,), countdown=300)
-   
+    
     
 class Register_user(models.Model):
     email = models.EmailField(max_length=255, unique=True)
@@ -96,23 +94,4 @@ class Register_user(models.Model):
     confirm_password = models.CharField(max_length=50,null=True,validators=[MinLengthValidator(8,'Password must have 8 letters')])
     otp = models.IntegerField(blank=True, null=True)
     
-    def delete_after10(self):
-        delete_registeruser.apply_async((self.email,), countdown=600)
-
-@shared_task
-def delete_otp_users(email):
-    try:
-        instance= EmailOTP.objects.get(email=email)
-        instance.delete()
-        print("deleted")
-    except:
-        print("doesn't exist")
-
-@shared_task
-def delete_registeruser(email):
-    try:
-        instance = Register_user.objects.get(email=email)
-        instance.delete()
-        print("deleted")
-    except:
-        print("doesn't exist")
+    
