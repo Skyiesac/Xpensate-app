@@ -72,7 +72,7 @@ class VerifyOTPSerializer(serializers.Serializer):
     #when otp is to register    
     def create_us(self, data):
         
-        user, created = User.objects.get_or_create(
+        user = User.objects.create(
             email=data['email'],
             defaults={'password': Register_user.objects.get(email=data['email']).password}
         )
@@ -183,6 +183,9 @@ class ResetPassSerializer(serializers.Serializer):
          userotp= EmailOTP.objects.get(email= attrs['email'], forgot=True)
         except:  
           raise serializers.ValidationError({"error": "This OTP is either unverified or invalid"})
+        if userotp.otp_created_at + timedelta(minutes=10)< timezone.now() :
+             raise serializers.ValidationError({'error':'This password reset link has expired.'})
+       
         attrs['user']=user
         
         return attrs
