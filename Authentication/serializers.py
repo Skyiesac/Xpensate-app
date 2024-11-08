@@ -11,7 +11,7 @@ import random
 from django.contrib.auth.hashers import make_password
 
 class RegisterSerializer(serializers.Serializer):
-    email= serializers.CharField(write_only = True)
+    email= serializers.EmailField(write_only = True)
     password = serializers.CharField(write_only= True)
     confirm_password = serializers.CharField(write_only= True)
     message= serializers.CharField(read_only=True)
@@ -51,7 +51,7 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class VerifyOTPSerializer(serializers.Serializer):
-    email= serializers.CharField(write_only = True)
+    email= serializers.EmailField(write_only = True)
     otp = serializers.IntegerField(write_only= True)
     message= serializers.CharField(read_only=True)
     tokens = serializers.JSONField(read_only=True)
@@ -72,7 +72,7 @@ class VerifyOTPSerializer(serializers.Serializer):
     #when otp is to register    
     def create_us(self, data):
         
-        user, created = User.objects.get_or_create(
+        user = User.objects.create(
             email=data['email'],
             defaults={'password': Register_user.objects.get(email=data['email']).password}
         )
@@ -183,6 +183,9 @@ class ResetPassSerializer(serializers.Serializer):
          userotp= EmailOTP.objects.get(email= attrs['email'], forgot=True)
         except:  
           raise serializers.ValidationError({"error": "This OTP is either unverified or invalid"})
+        if userotp.otp_created_at + timedelta(minutes=10)< timezone.now() :
+             raise serializers.ValidationError({'error':'This password reset link has expired.'})
+       
         attrs['user']=user
         
         return attrs
