@@ -11,7 +11,7 @@ import random
 from django.contrib.auth.hashers import make_password
 
 class RegisterSerializer(serializers.Serializer):
-    email= serializers.CharField(write_only = True)
+    email= serializers.EmailField(write_only = True)
     password = serializers.CharField(write_only= True)
     confirm_password = serializers.CharField(write_only= True)
     message= serializers.CharField(read_only=True)
@@ -51,7 +51,7 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class VerifyOTPSerializer(serializers.Serializer):
-    email= serializers.CharField(write_only = True)
+    email= serializers.EmailField(write_only = True)
     otp = serializers.IntegerField(write_only= True)
     message= serializers.CharField(read_only=True)
     tokens = serializers.JSONField(read_only=True)

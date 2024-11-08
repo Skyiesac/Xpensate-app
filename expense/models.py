@@ -14,7 +14,7 @@ class Category(models.Model):
         return self.name
 
 class expenses(models.Model):
-    amount = models.DecimalField(blank=False, decimal_places=2 , max_digits= 9, validators=[MinValueValidator(Decimal("0.10"))] )
+    amount = models.DecimalField(blank=False, decimal_places=2 , max_digits= 9, validators=[MinValueValidator(Decimal("1.00"))] )
     note= models.CharField(max_length=100 ,null=True, blank=True)
     date= models.DateField(default=date.today)
     time= models.TimeField(default= datetime.now().time)
