@@ -2,6 +2,7 @@ from rest_framework import serializers, status
 from rest_framework.generics import *
 from .serializers import *
 from .models import *
+from django.db.models import Sum , Case, When, F
 from rest_framework.permissions import IsAuthenticated ,AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -117,9 +118,95 @@ class DeleteexpView(DestroyAPIView):
        },status=status.HTTP_404_NOT_FOUND)
     
     def delete(self, request,id, *args, **kwargs):
+     try:
        expense = expenses.objects.get(id=id, user=request.user)
        expense.delete()
        return Response({"success":"True",
                         'message': 'Expense deleted successfully'},
                     status=status.HTTP_204_NO_CONTENT)
+     except:
+        return Response({
+          "message":"This expense doesn't exist."
+       },status=status.HTTP_404_NOT_FOUND)
 
+
+class ListExpensesView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ExpensesSerializer
+
+    def get_queryset(self):
+        if expenses is None:
+            return Response({
+                "success":"False",
+                "message":"No expenses found."
+            }, status=status.HTTP_404_NOT_FOUND)
+        return expenses.objects.filter(user=self.request.user).order_by('-date', '-time')
+
+
+class CategoryexpView(APIView):
+    permission_classes = [IsAuthenticated]
+
+   
+    def get(self, request, *args, **kwargs):
+        expense = expenses.objects.filter(user=request.user)
+        
+        expense_by_category = {}
+        total_expenses = 0
+
+        for exp in expense:
+            if exp.is_credit:
+             amount = -exp.amount
+            else:
+             amount=exp.amount
+            total_expenses += amount
+
+            if exp.category not in expense_by_category:
+                expense_by_category[exp.category] = 0
+            expense_by_category[exp.category] += amount
+
+        expense_list = [{'category': k, 'total': v} for k, v in expense_by_category.items()]
+        if expense_list:
+            return Response({
+                "total_expenses": total_expenses,
+                "expenses_by_category": expense_list
+            })
+        else:
+           return Response({
+                "success":"False",
+                "error":"This list is either empty or Unable to load the required list"
+            },status=status.HTTP_400_BAD_REQUEST)
+    
+class DaybasedexpView(APIView):
+    permission_classes = [IsAuthenticated]
+
+   
+    def get(self, request, *args, **kwargs):
+        expense = expenses.objects.filter(user=request.user)
+        
+        expense_by_days = {}
+        total_expenses = 0
+
+        for exp in expense:
+            if exp.is_credit:
+             amount = -exp.amount
+            else:
+             amount=exp.amount
+            total_expenses += amount
+            
+            if exp.date not in expense_by_days:
+                    expense_by_days[exp.date] = 0
+            expense_by_days[exp.date] += amount
+
+        expenses_by_day_list = [{'date': k, 'total': v} for k, v in expense_by_days.items()]
+        expenses_by_day_list.reverse()
+        if expenses_by_day_list:
+            return Response({
+            "total_expenses": total_expenses,
+            "expenses_by_day": expenses_by_day_list
+            })
+        else:
+            return Response({
+                "success":"False",
+                "error":"This list is either empty or unable to load the required list"
+            },status=status.HTTP_400_BAD_REQUEST)
+            
