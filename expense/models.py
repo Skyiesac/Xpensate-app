@@ -17,11 +17,12 @@ class expenses(models.Model):
     amount = models.DecimalField(blank=False, decimal_places=2 , max_digits= 9, validators=[MinValueValidator(Decimal("1.00"))] )
     note= models.CharField(max_length=100 ,null=True, blank=True)
     date= models.DateField(default=date.today)
-    time= models.TimeField(default= datetime.now().time)
+    time= models.TimeField(default=datetime.now().time())
     category = models.CharField(blank=False, max_length=50)
 
     user = models.ForeignKey(User, on_delete= models.CASCADE)
     image = models.ImageField(null=True, blank=True, upload_to ='upload_pics/')
+    is_credit= models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.amount}"
