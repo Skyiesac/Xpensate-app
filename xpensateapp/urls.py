@@ -25,4 +25,5 @@ urlpatterns = [
     path('auth/', include('Authentication.urls')),
     path('expense/', include('expense.urls')),
     path('analytics/', include('analytics.urls')),
+    path('split/', include('billsplit.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
