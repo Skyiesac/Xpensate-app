@@ -90,7 +90,7 @@ class EmailOTP(models.Model):
 class Register_user(models.Model):
     email = models.EmailField(max_length=255, unique=True)
     created_time = models.DateTimeField(auto_now_add=True)
-    password = models.CharField(max_length=50,null=True, validators=[MinLengthValidator(8,'Password must have 8 letters')])
+    password = models.CharField(null=True, validators=[MinLengthValidator(8,'Password must have 8 letters')])
     confirm_password = models.CharField(max_length=50,null=True,validators=[MinLengthValidator(8,'Password must have 8 letters')])
     otp = models.IntegerField(blank=True, null=True)
     

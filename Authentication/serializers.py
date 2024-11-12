@@ -25,6 +25,7 @@ class RegisterSerializer(serializers.Serializer):
          raise serializers.ValidationError({"Error":"User with this email already exists"})
       if Register_user.objects.filter(email=attrs['email']):
         Register_user.objects.get(email=attrs['email']).delete()
+      if EmailOTP.objects.filter(email=attrs['email']):
         EmailOTP.objects.get(email=attrs['email']).delete()
 
       otpto = self.otpsend(attrs)
@@ -74,7 +75,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         user = User.objects.create(
             email=data['email'],
-            defaults={'password': Register_user.objects.get(email=data['email']).password}
+           password= Register_user.objects.get(email=data['email']).password
         )
         if not user:
             raise serializers.ValidationError({'error': 'User with this email already exists.'})
