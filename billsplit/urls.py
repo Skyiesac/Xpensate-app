@@ -6,6 +6,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = [
      path('create/', DashboardView.as_view()),
      path('addgroup/', AddGroupView.as_view()),
-    #  path('group/<int:id>/', GroupDetailView.as_view()),
+     path('group/<int:id>/', AddGroupMemberView.as_view()),
 
 ]

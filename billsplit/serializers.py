@@ -37,8 +37,8 @@ class BillParticipantSerializer(serializers.ModelSerializer):
         fields = ['id', 'bill', 'participant', 'amount', 'paid']
 
 class BillSerializer(serializers.ModelSerializer):
-    group = serializers.SlugRelatedField(slug_field='name')
-    billowner = serializers.SlugRelatedField(slug_field='email')
+    group = serializers.SlugRelatedField(slug_field='name', queryset=Group.objects.all())
+    billowner = serializers.SlugRelatedField(slug_field='email' , queryset=User.objects.all())
     bill_participants = BillParticipantSerializer(many=True, read_only=True)
 
     class Meta:

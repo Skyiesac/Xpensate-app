@@ -50,3 +50,25 @@ class AddGroupView(CreateAPIView):
                     "error": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
             
+class AddGroupMemberView(CreateAPIView):
+        permission_classes = [IsAuthenticated]
+        serializer_class = GroupMemberSerializer
+
+        def post(self, request, *args, **kwargs):
+            group_id = request.data['group']
+            group = Group.objects.filter(id=group_id).first()
+            if group is None:
+                return Response({ "success" : "False",
+                    "error": "Group not found"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer= GroupMemberSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "success": "True",
+                    "message": "Member added to group successfully"
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "success": "False",
+                    "error": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
