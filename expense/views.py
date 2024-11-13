@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from django.utils import timezone 
 from datetime import datetime
 import re
-
+import random 
 # change permission class in end
 
 class CategorylistView(APIView):
@@ -103,19 +103,6 @@ class UpdateexpView(UpdateAPIView):
             }, status=status.HTTP_200_OK)
         return Response({"success": "False",
           "error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-       
-class DeleteexpView(DestroyAPIView):
-    permission_classes= [IsAuthenticated]
-    serializer_class = ExpensesSerializer
-    
-    def get(self, request, id):
-       if expenses.objects.filter(id=id,user=request.user).exists():
-          expense = expenses.objects.get(id=id,user=request.user)
-          serializer = ExpensesSerializer(expense)
-          return Response(serializer.data)
-       return Response({
-          "message":"This expense doesn't exist."
-       },status=status.HTTP_404_NOT_FOUND)
     
     def delete(self, request,id, *args, **kwargs):
      try:
@@ -128,7 +115,7 @@ class DeleteexpView(DestroyAPIView):
         return Response({
           "message":"This expense doesn't exist."
        },status=status.HTTP_404_NOT_FOUND)
-
+     
 
 class ListExpensesView(ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -164,7 +151,19 @@ class CategoryexpView(APIView):
                 expense_by_category[exp.category] = 0
             expense_by_category[exp.category] += amount
 
-        expense_list = [{'category': k, 'total': v} for k, v in expense_by_category.items()]
+            def generate_random_color():
+                return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+            colors = {}
+            for category in expense_by_category.keys():
+                color = generate_random_color()
+                while color in colors.values():
+                    color = generate_random_color()
+                colors[category] = color
+
+        expense_list = [{'category': k, 'total': v, 'color': colors[k]} for k, v in expense_by_category.items()]
+        
+        # expense_list = [{'category': k, 'total': v} for k, v in expense_by_category.items()]
         if expense_list:
             return Response({
                 "total_expenses": total_expenses,
