@@ -21,12 +21,12 @@ class GroupSerializer(serializers.ModelSerializer):
         return group
 
 class GroupMemberSerializer(serializers.ModelSerializer):
-    group = serializers.SlugRelatedField(slug_field='name', queryset=Group.objects.all())
-    member = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
+   member = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
 
-    class Meta:
+   class Meta:
         model = GroupMember
         fields = ['id', 'group', 'member', 'date_join']
+
 
 
 class BillParticipantSerializer(serializers.ModelSerializer):
@@ -37,7 +37,6 @@ class BillParticipantSerializer(serializers.ModelSerializer):
         fields = ['id', 'bill', 'participant', 'amount', 'paid']
 
 class BillSerializer(serializers.ModelSerializer):
-    group = serializers.SlugRelatedField(slug_field='name', queryset=Group.objects.all())
     billowner = serializers.SlugRelatedField(slug_field='email' , queryset=User.objects.all())
     bill_participants = BillParticipantSerializer(many=True, read_only=True)
 
