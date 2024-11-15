@@ -133,21 +133,67 @@ class AddRemoveMemberView(APIView):
 class CreateBillView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request,id, *args, **kwargs):
-        group_id = id
-        group = Group.objects.get(id=group_id)
+    def post(self, request, id, *args, **kwargs):
+        group = Group.objects.get(id=id)
         if group is None:
-                return Response({
-                    "success": "False",
-                    "error": "Group not found"
-                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "success": "False",
+                "error": "Group not found"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if group.groupowner != request.user:
-                return Response({
-                    "success": "False",
-                    "error": "Only the group owner can create bills"
-                }, status=status.HTTP_403_FORBIDDEN)
-
-      
-
+            return Response({
+                "success": "False",
+                "error": "Only the group owner can create bills"
+            }, status=status.HTTP_403_FORBIDDEN)
+        print(1)
+        bill_data = request.data.copy()
         
+        bill_data['bill_participants'] = request.data['bill_participants']
+        print(2)
+        bill_serializer = BillSerializer(data=request.data, context={'request': request , 'group': group})
+        if bill_serializer.is_valid():
+            print(3)
+            bill = bill_serializer.save()
+
+            print(9)
+            return Response({
+                "success": "True",
+                "message": "Bill and participants added successfully",
+                "bill": bill_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "success": "False",
+                "error": bill_serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MarkAsPaidView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id, *args, **kwargs):
+        bill = get_object_or_404(Bill, id=id)
+        email=request.data['email']
+        if request.user != bill.billowner:
+            return Response({
+                "success": "False",
+                "error": "Only the bill owner can mark participants as paid"
+            }, status=status.HTTP_403_FORBIDDEN)
+        if not email:
+            return Response({
+                "success": "False",
+                "error": "Participant email is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        participant = get_object_or_404(User, email=email)
+        
+        billparticipant = get_object_or_404(BillParticipant, bill=bill, participant=participant)
+        billparticipant.paid = True
+        billparticipant.save()
+
+        return Response({
+            "success": "True",
+            "message": "Participant marked as paid successfully"
+        }, status=status.HTTP_200_OK)
+    
