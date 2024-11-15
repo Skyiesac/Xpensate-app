@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'expense',
     'analytics',
     'billsplit',
+    'triptracker',
 ]
 
 MIDDLEWARE = [
