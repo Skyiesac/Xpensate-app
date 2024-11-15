@@ -11,12 +11,25 @@ def generate_invite_code(length=8):
     return code
 
 
-def email_for_joining(email,otp):
-     subject=""
+def email_for_joining(email, name):
+     subject=f"Welcome to {name}"
      message = f"""
-Hello user, 
-You have been added to the trip tracking group.
--Xpensate
+Hello user,
+
+Welcome to your new Xpensate group "{name}" !
+
+You're now part of a community where you can easily track and manage your shared expenses.
+
+Here's what you can do:
+
+Add Expenses: Easily log your expenses, big or small.
+Track Spending: Keep a detailed record of your contributions.
+Settle Up Easily: Let Xpensate calculate who owes who.
+Stay Organized: Manage your group's finances effortlessly.
+Let's make group expenses a breeze!
+
+By-
+The Xpensate team
 """
      
      from_email = settings.EMAIL_HOST_USER

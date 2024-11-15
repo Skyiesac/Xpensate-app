@@ -8,11 +8,12 @@ from .serializers import *
 from .models import *
 from rest_framework.generics import *
 from django.db.models import Count, Sum
-from .models import *
+from .utils import *
 import json
+from django.db import transaction
 
 # Create your views here.
-class createGroupView(APIView):
+class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
 
         def post(self, request, *args, **kwargs):
@@ -70,32 +71,37 @@ class AddRemovememView(APIView):
     permission_classes=[IsAuthenticated]       
 
     def post(self,request,id, *args, **kwargs):
+         email=request.data['email']
          group = Tripgroup.objects.get(id=id)
          if group is None:
                 return Response({ "success" : "False",
                     "error": "Group not found"}, status=status.HTTP_400_BAD_REQUEST)
-            
-         if TripMember.objects.filter(group=group, user=request.user).exists():
+         user = get_object_or_404(User, email=email)
+
+         if TripMember.objects.filter(group=group, user=user).exists():
             return Response({
                 "success": "False",
                 "error":"Already a member of this group"
             }, status=status.HTTP_400_BAD_REQUEST)
          
-         TripMember.objects.create(group=group, user=request.user)
+         TripMember.objects.create(group=group, user=user)
+         email_for_joining(email, group.name)
          return Response({
                 "success": "True",
                 "message": "Successfully joined the group"
             }, status=status.HTTP_200_OK)
  
     def delete(self, request, id , *args, **kwargs):
+         email=request.data['email']
+         user = get_object_or_404(User, email=email)
          group = Tripgroup.objects.get(id=id)
          if group is None:
                 return Response({ "success" : "False",
                     "error": "Group not found"}, status=status.HTTP_400_BAD_REQUEST)
          
             
-         if TripMember.objects.filter(group=group, user=request.user).exists():
-            tripmem= TripMember.objects.get(group=group, user=request.user)
+         if TripMember.objects.filter(group=group, user=user).exists():
+            tripmem= TripMember.objects.get(group=group, user=user)
             tripmem.delete()
             return Response({
                 "success": "True",
@@ -109,3 +115,50 @@ class AddRemovememView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
             
 
+class CreateexpView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def post(self, request,id, *args , **kwargs):
+        group= get_object_or_404(Tripgroup, id=id)
+        email=request.data['email']
+        try:
+           trip_mem= TripMember.objects.get(group=group, user__email=email)
+        except :
+            return Response({
+                "success": "False",
+                "error": "Email does not exist in the members of this group"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user= trip_mem.user
+        data = request.data.copy()
+        data['group'] = group.id
+        data['paidby']=user
+
+        serializer = AddedExpSerializer(data=data)
+        if serializer.is_valid():
+            with transaction.atomic():
+                added_exp = serializer.save(paidby=user)
+                members = TripMember.objects.filter(group=group)
+                memberscnt=members.count()
+                debt_amount= added_exp.amount / memberscnt
+
+                for member in members:
+                    if member.user!=user:
+                        tosettle.objects.create(
+                            group=group,
+                            debtamount=debt_amount,
+                            debter=member.user,
+                            creditor=user,
+                            connect=added_exp
+                        )
+
+                return Response({
+                    "success": "True",
+                    "message": "Expense added and settlements created successfully!"
+                }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "success": "False",
+                "error": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        

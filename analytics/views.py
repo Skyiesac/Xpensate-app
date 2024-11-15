@@ -98,10 +98,8 @@ class DaybasedGraphView(APIView):
                 "graph": image_final
             },status=status.HTTP_200_OK)
     
-@api_view(['GET', 'POST'])
-def currency_converter(request):
-   
-    if request.method=="GET":
+class CurrencyConverterView(APIView):
+      def get(self, request, *args, **kwargs):
         api_key=config('CURRENCY_API')
         currency_url= f"https://v6.exchangerate-api.com/v6/{api_key}/codes"
 
@@ -115,7 +113,7 @@ def currency_converter(request):
         }, status=status.HTTP_200_OK)
 
 
-    if request.method== "POST":
+      def post(self, request, *args, **kwargs):
         from_currency= request.POST.get('from_currency')
         to_currency= request.POST.get('to_currency')
         money= request.POST.get('money')
