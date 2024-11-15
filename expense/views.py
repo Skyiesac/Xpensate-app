@@ -10,6 +10,9 @@ from django.utils import timezone
 from datetime import datetime
 import re
 import random 
+from django.db.models import Value, DecimalField
+from django.db.models.functions import Coalesce
+
 # change permission class in end
 
 class CategorylistView(APIView):
@@ -121,13 +124,35 @@ class ListExpensesView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ExpensesSerializer
 
-    def get_queryset(self):
-        if expenses is None:
+    def get(self, request, *args, **kwargs):
+        expense= expenses.objects.filter(user=request.user)
+        if expense is None:
             return Response({
                 "success":"False",
                 "message":"No expenses found."
             }, status=status.HTTP_404_NOT_FOUND)
-        return expenses.objects.filter(user=self.request.user).order_by('-date', '-time')
+        else:
+          total_expenses = expense.aggregate(
+            total=Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        )['total']
+        
+          expenses_list = expenses.objects.filter(user=request.user).order_by('-date', '-time')
+          serializer = ExpensesSerializer(expenses_list, many=True)
+
+          return Response({
+                         "total_expense":total_expenses,
+                         "expenses": serializer.data
+                          }, status=status.HTTP_200_OK)
 
 
 class CategoryexpView(APIView):
@@ -136,39 +161,44 @@ class CategoryexpView(APIView):
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
+
+        total_expenses = expense.aggregate(
+            total=Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        )['total']
+
+        expense_by_category = expense.values('category').annotate(
+            total=Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        ).order_by('category')
+
         
-        expense_by_category = {}
-        total_expenses = 0
-
-        for exp in expense:
-            if exp.is_credit:
-             amount = -exp.amount
-            else:
-             amount=exp.amount
-            total_expenses += amount
-
-            if exp.category not in expense_by_category:
-                expense_by_category[exp.category] = 0
-            expense_by_category[exp.category] += amount
-
-            def generate_random_color():
-                return "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-            colors = {}
-            for category in expense_by_category.keys():
-                color = generate_random_color()
-                while color in colors.values():
-                    color = generate_random_color()
-                colors[category] = color
-
-        expense_list = [{'category': k, 'total': v, 'color': colors[k]} for k, v in expense_by_category.items()]
-        
-        # expense_list = [{'category': k, 'total': v} for k, v in expense_by_category.items()]
-        if expense_list:
-            return Response({
+        # expense_by_category_dict = {item['category']: item['category_total'] for item in expense_by_category}
+        expense_by_category_list= list(expense_by_category)
+        if expense_by_category_list :
+           return Response({
                 "total_expenses": total_expenses,
-                "expenses_by_category": expense_list
-            })
+                "expenses_by_category": expense_by_category_list
+                },status=status.HTTP_400_BAD_REQUEST)
+    
         else:
            return Response({
                 "success":"False",
@@ -177,27 +207,39 @@ class CategoryexpView(APIView):
     
 class DaybasedexpView(APIView):
     permission_classes = [IsAuthenticated]
-
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
-        
-        expense_by_days = {}
-        total_expenses = 0
 
-        for exp in expense:
-            if exp.is_credit:
-             amount = -exp.amount
-            else:
-             amount=exp.amount
-            total_expenses += amount
-            
-            if exp.date not in expense_by_days:
-                    expense_by_days[exp.date] = 0
-            expense_by_days[exp.date] += amount
+        total_expenses = expense.aggregate(
+            total=Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        )['total']
 
-        expenses_by_day_list = [{'date': k, 'total': v} for k, v in expense_by_days.items()]
-        expenses_by_day_list.reverse()
+        expense_by_days = expense.values('date').annotate(
+            total=Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        ).order_by('-date')
+
+        expenses_by_day_list = list(expense_by_days)
         if expenses_by_day_list:
             return Response({
             "total_expenses": total_expenses,
