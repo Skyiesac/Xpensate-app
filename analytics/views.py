@@ -7,9 +7,12 @@ from rest_framework.views import APIView
 import matplotlib.pyplot as plt
 import io
 import base64
+from rest_framework.decorators import api_view
 from scipy.interpolate import make_interp_spline
 import numpy as np
-import matplotlib.dates as mdates
+import requests
+import json
+from decouple import config
 # Create your views here.
    
 class DaybasedGraphView(APIView):
@@ -95,4 +98,33 @@ class DaybasedGraphView(APIView):
                 "graph": image_final
             },status=status.HTTP_200_OK)
     
-    
+@api_view(['GET', 'POST'])
+def currency_converter(request):
+   
+    if request.method=="GET":
+        api_key=config('CURRENCY_API')
+        currency_url= f"https://v6.exchangerate-api.com/v6/{api_key}/codes"
+
+        currency_request= requests.get(currency_url).json()
+
+        supported_codes= currency_request.get('supported_codes',[])
+       
+        return Response({
+            "success":True,
+            "data": supported_codes
+        }, status=status.HTTP_200_OK)
+
+
+    if request.method== "POST":
+        from_currency= request.POST.get('from_currency')
+        to_currency= request.POST.get('to_currency')
+        money= request.POST.get('money')
+        api_key=config('CURRENCY_API')
+        currency_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/{from_currency}/{to_currency}/{money}"
+        currency_request= requests.get(currency_url).json()
+        result= currency_request['conversion_result']
+        return Response({
+            "success":True,
+            "value":result
+        }, status=status.HTTP_200_OK)
+
