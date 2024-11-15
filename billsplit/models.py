@@ -28,7 +28,7 @@ class Bill(models.Model):
     billdate = models.DateTimeField(null=True, auto_now_add=True)
     
     def __str__(self):
-        return self.billname
+        return self.billname  if self.billname else "Unnamed Bill"
 
 
 class BillParticipant(models.Model):
@@ -38,4 +38,4 @@ class BillParticipant(models.Model):
     paid = models.BooleanField(default=False)
     
     def __str__(self):
-        return self.bill.billname + " " + self.participant.email
+        return  self.participant.email

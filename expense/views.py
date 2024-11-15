@@ -209,3 +209,4 @@ class DaybasedexpView(APIView):
                 "error":"This list is either empty or unable to load the required list"
             },status=status.HTTP_400_BAD_REQUEST)
             
+
