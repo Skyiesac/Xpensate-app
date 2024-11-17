@@ -14,5 +14,7 @@ urlpatterns = [
    path('passforget/', ForgetPassword.as_view()),
    path('pass/otpverify/', ForgetOTPverView.as_view()),
    path('passreset/', ResetPassView.as_view()),
+   path('phoneverify/', Sendotpphone.as_view()),
+   path('phone/otpverify/', VerifyPhoneOTP.as_view()),
    
 ]

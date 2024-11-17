@@ -9,4 +9,5 @@ urlpatterns = [
     path('list/', views.ListExpensesView.as_view()),
     path('category-expense/', views.CategoryexpView.as_view()),
     path('days-expense/', views.DaybasedexpView.as_view()),
+    path('exportexpense/', views.Expenseexport.as_view()),
    ]

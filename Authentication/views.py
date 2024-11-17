@@ -4,8 +4,9 @@ from Authentication.serializers import *
 from rest_framework.permissions import AllowAny, IsAuthenticated 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User
- 
+from .models import *
+from .utils import send_otpphone
+
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
@@ -63,3 +64,59 @@ class ResetPassView(UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'messsage':['Password changed successfully']}, status=status.HTTP_200_OK)
+
+
+class Sendotpphone(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+       contact = request.data['contact']
+       if contact is None:
+              return Response({ 'success':'False',
+                  'message':'Contact is required'}, status=status.HTTP_400_BAD_REQUEST)
+       
+       if User.objects.filter(contact=contact).exists():
+           return Response({ 'success':'False',
+               'message':'Contact already exists'}, status=status.HTTP_400_BAD_REQUEST)
+       
+       otp = send_otpphone(contact)
+       PhoneOTP.objects.update_or_create(contact=contact, 
+                                         defaults={"otp" : otp})
+       return Response({ 'success':'True',
+           'message':'OTP sent successfully!'}, status=status.HTTP_200_OK)
+
+class VerifyPhoneOTP(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        contact= str(request.data['contact'])
+        otp = int(request.data.get('otp'))
+        if request.data['contact'] is None:
+              return Response({ 'success':'False',
+                  'message':'Contact is required'}, status=status.HTTP_400_BAD_REQUEST)
+       
+        if request.data['otp'] is None:
+              return Response({ 'success':'False',
+                  'message':'OTP is required to verify'}, status=status.HTTP_400_BAD_REQUEST)
+       
+        try:
+          userotp= PhoneOTP.objects.get(contact= contact)
+        except:  
+          return Response({ "success":"False",
+                           "error": "This OTP is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+        otph = userotp.otp
+        if otph != otp:
+                return Response({'success':'False',
+                    'error':'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        if userotp.otp_created_at + timedelta(minutes=1)< timezone.now() :
+                return Response({'success':'False',
+                    'error':'OTP expired, Resend OTP'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        user.contact=contact
+        user.save()
+        PhoneOTP.objects.get(contact=contact).delete()
+           
+        return Response({'success':'True',
+            'message':'Phone number verified successfully!'}, status=status.HTTP_200_OK)     
+    

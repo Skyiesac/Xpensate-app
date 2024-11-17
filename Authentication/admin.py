@@ -9,7 +9,7 @@ class UserModelAdmin(BaseUserAdmin):
   list_display = ('email','created_at', 'is_admin', 'is_active')
   list_filter = ('is_admin','is_active',)
   fieldsets = (
-      (None, {'fields': ('email', 'password')}),
+      (None, {'fields': ('email', 'password','contact')}),
     )
  
   add_fieldsets = (
@@ -34,6 +34,12 @@ class RegisteruserModelAdmin(admin.ModelAdmin):
   fieldsets= (
     ('Details', {'fields':('email', 'password', 'otp',)}),
   )
+class PhoneOTPModelAdmin(admin.ModelAdmin):
+  list_display = ('contact', 'otp','otp_created_at')
+  fieldsets = (
+      ('Details', {'fields': ('contact', 'otp',)}),
+  )
 admin.site.register(User, UserModelAdmin)
 admin.site.register(EmailOTP, EmailOTPModelAdmin)
+admin.site.register(PhoneOTP, PhoneOTPModelAdmin)
 admin.site.register(Register_user , RegisteruserModelAdmin)

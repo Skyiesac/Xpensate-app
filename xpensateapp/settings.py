@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'Authentication',
+    'import_export',
     'expense',
     'analytics',
     'billsplit',

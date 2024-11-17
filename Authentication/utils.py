@@ -3,7 +3,10 @@ from django.core.mail import send_mail
 import re
 from django.conf import settings
 from xpensateapp.settings import EMAIL_HOST_USER
-                
+import random
+import requests
+from decouple import config
+
 def normalize_email(email):
         
         email = email or ''
@@ -62,3 +65,11 @@ def strong_pass(password):
             return False
         else:
             return True
+        
+def send_otpphone(contact):
+    otp = random.randint(1000, 9999)
+    api_key= config('PHONE_API')
+    url=f"https://2factor.in/API/V1/{api_key}/SMS/{contact}/{otp}"
+    response = requests.get(url)
+    return otp
+   

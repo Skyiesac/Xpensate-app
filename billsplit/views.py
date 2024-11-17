@@ -132,9 +132,18 @@ class AddRemoveMemberView(APIView):
 
 class CreateBillView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = BillSerializer
 
-    def post(self, request, id, *args, **kwargs):
-        group = Group.objects.get(id=id)
+    def post(self, request , *args, **kwargs):
+        bill_serializer = BillSerializer(data=request.data, context={'request': request})
+        if not bill_serializer.is_valid():
+            return Response({
+                "success": "False",
+                "error": bill_serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        group = bill_serializer.validated_data['group']
+
         if group is None:
             return Response({
                 "success": "False",
@@ -146,27 +155,15 @@ class CreateBillView(APIView):
                 "success": "False",
                 "error": "Only the group owner can create bills"
             }, status=status.HTTP_403_FORBIDDEN)
-        print(1)
-        bill_data = request.data.copy()
-        
-        bill_data['bill_participants'] = request.data['bill_participants']
-        print(2)
-        bill_serializer = BillSerializer(data=request.data, context={'request': request , 'group': group})
-        if bill_serializer.is_valid():
-            print(3)
-            bill = bill_serializer.save()
 
-            print(9)
-            return Response({
-                "success": "True",
-                "message": "Bill and participants added successfully",
-                "bill": bill_serializer.data
-            }, status=status.HTTP_201_CREATED)
-        else:
-            return Response({
-                "success": "False",
-                "error": bill_serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        bill = bill_serializer.save()
+
+        return Response({
+            "success": "True",
+            "message": "Bill and participants added successfully",
+            "bill": request.data
+        }, status=status.HTTP_201_CREATED)
+
 
 
 class MarkAsPaidView(APIView):
