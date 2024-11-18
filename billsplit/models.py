@@ -16,15 +16,18 @@ class GroupMember(models.Model):
     member = models.ForeignKey(User, on_delete=models.CASCADE, to_field='email')
     date_join = models.DateTimeField(auto_now_add=True)
     
+    class Meta:
+        unique_together = ('member', 'group')
+
     def __str__(self):
         return f"{self.group} - {self.member}"
-        
+     
 class Bill(models.Model):
+    billowner = models.ForeignKey(User, on_delete=models.CASCADE , related_name='owned_bills', to_field='email')
+    bill_participants = models.ManyToManyField(User, through="BillParticipant", related_name='participated_in_bills')
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     billname = models.CharField(null=True, max_length=20)
-    billowner = models.ForeignKey(User, on_delete=models.CASCADE , related_name='owned_bills', to_field='email')
-    bill_participants = models.ManyToManyField(User, through="BillParticipant", related_name='participated_in_bills')
     billdate = models.DateTimeField(null=True, auto_now_add=True)
     
     def __str__(self):

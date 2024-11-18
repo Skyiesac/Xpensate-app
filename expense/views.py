@@ -12,7 +12,8 @@ import re
 import random 
 from django.db.models import Value, DecimalField
 from django.db.models.functions import Coalesce
-
+from .resources import *
+from django.http import HttpResponse
 # change permission class in end
 
 class CategorylistView(APIView):
@@ -252,3 +253,13 @@ class DaybasedexpView(APIView):
             },status=status.HTTP_400_BAD_REQUEST)
             
 
+class Expenseexport(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs): 
+        expense = expenses.objects.filter(user=request.user)
+        
+        expense_resource = ExpensesResource().export(expense)
+        response= HttpResponse(expense_resource.csv, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
+        return response

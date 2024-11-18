@@ -44,7 +44,13 @@ class User(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    name=models.CharField(max_length=50, null=True, blank=True)
+    contact= models.CharField(max_length=16, null=True, blank=True)
+    appassword = models.CharField( null=True, blank=True)
+    monthlylimit=models.IntegerField(null=True, blank=True)
+    currency=models.CharField(max_length=3, null=True, blank=True)
+
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -94,4 +100,10 @@ class Register_user(models.Model):
     confirm_password = models.CharField(max_length=50,null=True,validators=[MinLengthValidator(8,'Password must have 8 letters')])
     otp = models.IntegerField(blank=True, null=True)
     
+class PhoneOTP(models.Model):
+    contact = models.CharField(max_length=10, unique=True)
+    otp = models.IntegerField(null=True, blank=True)
+    otp_created_at = models.DateTimeField(auto_now=True)
     
+    def __str__(self):
+        return f"{self.contact}"  

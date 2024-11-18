@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Group, GroupMember, Bill, BillParticipant
 from Authentication.models import User
+from django.shortcuts import get_object_or_404
 
 class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SlugRelatedField(slug_field='email', many=True, queryset=User.objects.all(), required=False)
@@ -36,36 +37,35 @@ class BillParticipantSerializer(serializers.ModelSerializer):
         fields = ['id', 'bill', 'participant', 'amount', 'paid']
 
 class BillSerializer(serializers.ModelSerializer):
-    billowner = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all(), required=False)
     bill_participants =  BillParticipantSerializer(many=True,required=False)
-    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
-
+    
     class Meta:
         model = Bill
-        fields = ['id', 'group', 'amount', 'billname', 'billowner', 'bill_participants', 'billdate']
+        fields = ['id', 'group', 'amount', 'billname', 'bill_participants', 'billdate']
 
     def create(self, validated_data):
         request = self.context.get('request')
-        group = self.context.get('group')
+        group = validated_data.get('group')
         billowner = request.user
-        print(5)
+        
         participants_data = validated_data.pop('bill_participants', [])
         bill = Bill.objects.create(
-            group=group,
             billowner=billowner,
             **validated_data
         )
-        print(6)
+        bp = []
         for participant_data in participants_data:
             email = participant_data['participant']
-            participant_user = User.objects.get(email=email)
-            print(7)
-            BillParticipant.objects.create(
+            participant_user = get_object_or_404( GroupMember , member=email, group=group)
+            b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
                 amount=participant_data['amount'],
                
             )
-            print(8)
+            bp += [b]
+       
+        validated_data["bill_participants"] = bp
+   
         return bill
     
