@@ -125,6 +125,11 @@ class UpdateUsernameView(APIView):
 
     def post(self, request, *args, **kwargs):
         name= request.data['name']
+        if name is None:
+            return Response({
+                "success":"False",
+                "error":"Name is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         user= request.user
         user.name= name
         user.save()

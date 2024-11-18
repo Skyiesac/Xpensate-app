@@ -46,7 +46,7 @@ class User(AbstractBaseUser):
     created_at = models.DateTimeField(auto_now_add=True)
     name=models.CharField(max_length=50, null=True, blank=True)
     contact= models.CharField(max_length=16, null=True, blank=True)
-    appassword = models.CharField( null=True, blank=True)
+    currency_rate= models.DecimalField(default=1 , max_digits=10, decimal_places=6)
     monthlylimit=models.IntegerField(null=True, blank=True)
     currency=models.CharField(max_length=3, null=True, blank=True)
 
