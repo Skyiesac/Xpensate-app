@@ -14,7 +14,10 @@ urlpatterns = [
    path('passforget/', ForgetPassword.as_view()),
    path('pass/otpverify/', ForgetOTPverView.as_view()),
    path('passreset/', ResetPassView.as_view()),
+
+   #profile
    path('phoneverify/', Sendotpphone.as_view()),
    path('phone/otpverify/', VerifyPhoneOTP.as_view()),
-   
+  path('username/', UpdateUsernameView.as_view()),
+  path('addcurrency/', UpdatecurrencyView.as_view()),
 ]

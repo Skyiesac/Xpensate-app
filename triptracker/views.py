@@ -162,3 +162,56 @@ class CreateexpView(APIView):
                 "error": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
         
+
+class EditexpView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, id, *args, **kwargs):
+        added_exp = get_object_or_404(addedexp, id=id)
+        group = added_exp.group
+        email = request.data.get('email')
+
+        try:
+            trip_mem = TripMember.objects.get(group=group, user__email=email)
+        except TripMember.DoesNotExist:
+            return Response({
+                "success": "False",
+                "error": "Email does not exist in the members of this group"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user = trip_mem.user
+        data = request.data.copy()
+        data['group'] = group.id
+        data['paidby'] = user
+
+        serializer = AddedExpSerializer(added_exp, data=data)
+        if serializer.is_valid():
+            with transaction.atomic():
+
+                added_exp = serializer.save(paidby=user)
+
+                tosettle.objects.filter(connect=added_exp).delete()
+
+                members = TripMember.objects.filter(group=group)
+                memberscnt = members.count()
+                debt_amount = added_exp.amount / memberscnt
+
+                for member in members:
+                    if member.user != user:
+                        tosettle.objects.create(
+                            group=group,
+                            debtamount=debt_amount,
+                            debter=member.user,
+                            creditor=user,
+                            connect=added_exp
+                        )
+
+                return Response({
+                    "success": "True",
+                    "message": "Expense updated and settlements created successfully!"
+                }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "success": "False",
+                "error": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)

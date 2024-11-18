@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import *
 from .utils import send_otpphone
-
+import json 
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
@@ -120,3 +120,36 @@ class VerifyPhoneOTP(APIView):
         return Response({'success':'True',
             'message':'Phone number verified successfully!'}, status=status.HTTP_200_OK)     
     
+class UpdateUsernameView(APIView):
+    permission_classes= [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        name= request.data['name']
+        user= request.user
+        user.name= name
+        user.save()
+
+        return Response({
+            "success":"True",
+            "message":"Name updated successfully."
+        }, status=status.HTTP_200_OK)
+    
+class UpdatecurrencyView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        currency= request.data['currency']
+        if len(currency)>3:
+            return Response({
+                "success":"False",
+                "error":"Write a valid code"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user= request.user
+        user.currency= currency
+        user.save()
+
+        return Response({
+            "success":"True",
+            "message":"Currency preference updated successfully."
+        }, status=status.HTTP_200_OK)

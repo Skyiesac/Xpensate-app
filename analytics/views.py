@@ -114,15 +114,38 @@ class CurrencyConverterView(APIView):
 
 
       def post(self, request, *args, **kwargs):
-        from_currency= request.POST.get('from_currency')
-        to_currency= request.POST.get('to_currency')
-        money= request.POST.get('money')
+        from_currency= request.data['from_currency']
+        to_currency= request.data['to_currency']
+        money= request.data['money']
         api_key=config('CURRENCY_API')
+        
+        if not all([from_currency, to_currency, money]):
+            return Response({
+                "success": False,
+                "error": "Invalid input parameters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         currency_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/{from_currency}/{to_currency}/{money}"
-        currency_request= requests.get(currency_url).json()
-        result= currency_request['conversion_result']
+        currency_request= requests.get(currency_url)
+        response= currency_request.json()
+        result=response['conversion_result']
         return Response({
             "success":True,
             "value":result
         }, status=status.HTTP_200_OK)
 
+class CurrencyAppView(APIView):
+   permission_classes= [IsAuthenticated]
+
+   def get(self, request, *args , **kwargs):
+        user= request.user
+        currency= user.currency
+        api_key=config('CURRENCY_API')
+        curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
+        currency_request= requests.get(curr_url).json()
+        result= currency_request['conversion_rate']
+        return Response({
+            "success":True,
+            "value":result
+        }, status=status.HTTP_200_OK)
+    
