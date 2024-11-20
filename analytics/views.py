@@ -148,6 +148,5 @@ class CurrencyAppView(APIView):
         return Response({
             "success":True,
             "value":result,
-            "value":user.currency_value
         }, status=status.HTTP_200_OK)
     

@@ -69,3 +69,15 @@ class BillSerializer(serializers.ModelSerializer):
    
         return bill
     
+class BillParticipantget(serializers.ModelSerializer):
+    participant = serializers.SlugRelatedField(slug_field='email', read_only=True)
+    class Meta:
+        model = BillParticipant
+        fields = ['id', 'participant', 'amount', 'paid']
+
+
+class BillgetSerializer(serializers.ModelSerializer):
+    bill_participants = BillParticipantget(source='billparticipant_set', many=True, required=False)
+    class Meta:
+        model = Bill
+        fields = ['id', 'group', 'amount', 'billname', 'bill_participants', 'billdate']
