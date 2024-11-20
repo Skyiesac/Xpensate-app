@@ -7,6 +7,9 @@ from rest_framework.views import APIView
 from .models import *
 from .utils import send_otpphone
 import json 
+from decouple import config
+import requests
+
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
@@ -154,7 +157,13 @@ class UpdatecurrencyView(APIView):
         user.currency= currency
         user.save()
 
+        api_key=config('CURRENCY_API')
+        curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
+        currency_request= requests.get(curr_url).json()
+        user.currency_rate= currency_request['conversion_rate']
+        result= currency_request['conversion_rate']
         return Response({
             "success":"True",
-            "message":"Currency preference updated successfully."
+            "message":"Currency preference updated successfully.",
+            # "value":result,
         }, status=status.HTTP_200_OK)

@@ -9,24 +9,22 @@ from rest_framework.generics import *
 from django.db.models import Count, Sum
 from .models import *
 import json
+from django.db.models import Q
 
-class DashboardView(APIView):
+class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
 
   def get(self,request, *args, **kwargs):
     groups = Group.objects.filter(groupowner=request.user).annotate(member_count=Count('groupmember'))
     othergrps = Group.objects.exclude(groupowner=request.user).filter(groupmember__member=request.user).annotate(member_count=Count('groupmember'))
-    debt_amount = BillParticipant.objects.filter(participant=request.user, paid=False).aggregate(total_debt=Sum('amount'))['total_debt'] or 0
-    amount_topay = BillParticipant.objects.filter(bill__billowner=request.user, paid=False).aggregate(total_owed=Sum('amount'))['total_owed'] or 0
-
+    
     groups_serializer = GroupSerializer(groups, many=True)
     othergroups_serializer = GroupSerializer(othergrps, many=True)
 
     context = {
         'owner groups': groups_serializer.data,
         'members groups': othergroups_serializer.data,
-        'debt_amount': debt_amount,
-        'amount_owed': amount_topay
+       
     }
     return Response(status=status.HTTP_200_OK, data=context)
   
@@ -161,7 +159,6 @@ class CreateBillView(APIView):
         return Response({
             "success": "True",
             "message": "Bill and participants added successfully",
-            "bill": request.data
         }, status=status.HTTP_201_CREATED)
 
 
@@ -194,3 +191,26 @@ class MarkAsPaidView(APIView):
             "message": "Participant marked as paid successfully"
         }, status=status.HTTP_200_OK)
     
+class RecentsplitsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        bills = Bill.objects.filter(billparticipant__participant=user).order_by('-billdate')
+        serializer = BillgetSerializer(bills, many=True)
+        return Response({
+            "success": "True",
+              "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+class GroupDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Group, id=id)
+        
+        serializer = GroupDetailSerializer(group)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)

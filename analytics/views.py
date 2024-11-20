@@ -134,20 +134,3 @@ class CurrencyConverterView(APIView):
             "value":result
         }, status=status.HTTP_200_OK)
 
-class CurrencyAppView(APIView):
-   permission_classes= [IsAuthenticated]
-
-   def get(self, request, *args , **kwargs):
-        user= request.user
-        currency= user.currency
-        api_key=config('CURRENCY_API')
-        curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
-        currency_request= requests.get(curr_url).json()
-        user.currency_rate= currency_request['conversion_rate']
-        result= currency_request['conversion_rate']
-        return Response({
-            "success":True,
-            "value":result,
-            "value":user.currency_value
-        }, status=status.HTTP_200_OK)
-    

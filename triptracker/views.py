@@ -120,9 +120,8 @@ class CreateexpView(APIView):
 
     def post(self, request,id, *args , **kwargs):
         group= get_object_or_404(Tripgroup, id=id)
-        email=request.data['email']
         try:
-           trip_mem= TripMember.objects.get(group=group, user__email=email)
+           trip_mem= TripMember.objects.get(group=group, user__email=request.data['paidby'])
         except :
             return Response({
                 "success": "False",
@@ -132,7 +131,6 @@ class CreateexpView(APIView):
         user= trip_mem.user
         data = request.data.copy()
         data['group'] = group.id
-        data['paidby']=user
 
         serializer = AddedExpSerializer(data=data)
         if serializer.is_valid():
@@ -144,13 +142,15 @@ class CreateexpView(APIView):
 
                 for member in members:
                     if member.user!=user:
-                        tosettle.objects.create(
+                        settlement, created = tosettle.objects.get_or_create(
                             group=group,
-                            debtamount=debt_amount,
                             debter=member.user,
                             creditor=user,
-                            connect=added_exp
+                            defaults={'debtamount': debt_amount, 'connect': added_exp}
                         )
+                        if not created:
+                            settlement.debtamount += debt_amount
+                            settlement.save()
 
                 return Response({
                     "success": "True",
@@ -162,56 +162,153 @@ class CreateexpView(APIView):
                 "error": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
         
-
-class EditexpView(APIView):
+class EditExpView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, id, *args, **kwargs):
-        added_exp = get_object_or_404(addedexp, id=id)
-        group = added_exp.group
-        email = request.data.get('email')
+    def put(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Tripgroup, id=id)
+        expense = get_object_or_404(addedexp, id=request.data['expense_id'], group=group)
 
         try:
-            trip_mem = TripMember.objects.get(group=group, user__email=email)
+            trip_mem = TripMember.objects.get(group=group, user=request.user)
+        except :
+            return Response({
+                "success": "False",
+                "error": "You are not a member of this group"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        old_amount = expense.amount
+        paidby= expense.paidby
+        serializer = AddedExpSerializer(expense, data=request.data, partial=True)
+        if serializer.is_valid():
+            with transaction.atomic():
+                updated_exp = serializer.save()
+
+                if old_amount != updated_exp.amount:
+                    members = TripMember.objects.filter(group=group)
+                    members_count = members.count()
+
+                    new_debt_amount = updated_exp.amount / members_count
+                    old_debt_amount = old_amount / members_count
+
+                    for member in members:
+                        if member.user != updated_exp.paidby:
+                            settlement, created = tosettle.objects.get_or_create(
+                                group=group,
+                                debter=member.user,
+                                creditor=paidby,
+                                defaults={'debtamount': 0}
+                            )
+                            if not created:
+                                settlement.debtamount -= old_debt_amount
+                                if settlement.debtamount <= 0:
+                                    settlement.delete()
+                                else:
+                                    settlement.save()
+
+                            settlement, created = tosettle.objects.get_or_create(
+                                group=group,
+                                debter=member.user,
+                                creditor=updated_exp.paidby,
+                                defaults={'debtamount': new_debt_amount, 'connect': updated_exp}
+                            )
+                            if not created:
+                                settlement.debtamount += new_debt_amount
+                                settlement.save()
+                             
+                return Response({
+                    "success": "True",
+                    "message": "Expense updated and settlements adjusted successfully!"
+                }, status=status.HTTP_200_OK)
+
+        return Response({
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteexpView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        group = get_object_or_404(Tripgroup, id=request.data['group_id'])
+        expen = get_object_or_404(addedexp, id=request.data['expense_id'], group=group)
+
+        try:
+            trip_mem = TripMember.objects.get(group=group, user=request.user)
         except TripMember.DoesNotExist:
             return Response({
                 "success": "False",
-                "error": "Email does not exist in the members of this group"
-            }, status=status.HTTP_400_BAD_REQUEST)
+                "error": "You are not a member of this group"
+            }, status=status.HTTP_403_FORBIDDEN)
 
-        user = trip_mem.user
-        data = request.data.copy()
-        data['group'] = group.id
-        data['paidby'] = user
+        with transaction.atomic():
+            members = TripMember.objects.filter(group=group)
+            members_count = members.count()
+            debt_amount = expen.amount / members_count
 
-        serializer = AddedExpSerializer(added_exp, data=data)
-        if serializer.is_valid():
-            with transaction.atomic():
+            for member in members:
+                if member.user != expen.paidby:
+                    settlement = tosettle.objects.get(group=group, debter=member.user, creditor=expen.paidby)
+                    settlement.debtamount -= debt_amount
+                    if settlement.debtamount <= 0:
+                        settlement.delete()
+                    else:
+                        settlement.save()
 
-                added_exp = serializer.save(paidby=user)
+            expen.delete()
 
-                tosettle.objects.filter(connect=added_exp).delete()
+        return Response({
+            "success": "True",
+            "message": "Expense deleted and settlements adjusted successfully!"
+        }, status=status.HTTP_200_OK)
 
-                members = TripMember.objects.filter(group=group)
-                memberscnt = members.count()
-                debt_amount = added_exp.amount / memberscnt
 
-                for member in members:
-                    if member.user != user:
-                        tosettle.objects.create(
-                            group=group,
-                            debtamount=debt_amount,
-                            debter=member.user,
-                            creditor=user,
-                            connect=added_exp
-                        )
+class SettlementView(APIView):
+    permission_classes = [IsAuthenticated]
 
-                return Response({
-                    "success": "True",
-                    "message": "Expense updated and settlements created successfully!"
-                }, status=status.HTTP_200_OK)
-        else:
+    def post(self, request, *args, **kwargs):
+        group_id = request.data['group_id']
+        settle_id = request.data['settle_id']
+        user= request.user
+        settlement = get_object_or_404(tosettle, group_id=group_id,id= settle_id , debter=user)
+        if not settlement:
             return Response({
                 "success": "False",
-                "error": serializer.errors
+                "error": "No settlement found for this user"
             }, status=status.HTTP_400_BAD_REQUEST)
+        if settlement.debter != user:
+            return Response({
+                "success": "False",
+                "error": "You are not authorized to mark this debt as paid."
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        settlement.delete()
+        return Response({
+            "success": "True",
+            "message": "Debt paid and settlement deleted successfully!"
+        }, status=status.HTTP_200_OK)
+       
+
+class GroupDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request,id, *args, **kwargs):
+        group_id = id
+        try:
+            group = Tripgroup.objects.get(id=group_id)
+
+            group_serializer = TripgroupSerializer(group)
+            
+            expenses = addedexp.objects.filter(group=group)
+            expense_serializer = AddedExpSerializer(expenses, many=True)
+            
+            response_data = {
+                "group": group_serializer.data,
+                "expenses": expense_serializer.data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        except Tripgroup.DoesNotExist:
+            return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
