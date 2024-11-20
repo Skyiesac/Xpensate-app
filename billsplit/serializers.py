@@ -57,10 +57,11 @@ class BillSerializer(serializers.ModelSerializer):
         for participant_data in participants_data:
             email = participant_data['participant']
             participant_user = get_object_or_404( GroupMember , member=email, group=group)
+            percent=participant_data['amount']
             b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
-                amount=participant_data['amount'],
+                amount=(percent/100) * bill.amount,
                
             )
             bp += [b]
@@ -69,11 +70,16 @@ class BillSerializer(serializers.ModelSerializer):
    
         return bill
     
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'name','profile_image'] 
+
 class BillParticipantget(serializers.ModelSerializer):
-    participant = serializers.SlugRelatedField(slug_field='email', read_only=True)
+    participant = UserSerializer(read_only=True) 
     class Meta:
         model = BillParticipant
-        fields = ['id', 'participant', 'amount', 'paid']
+        fields = [ 'participant', 'amount', 'paid']
 
 
 class BillgetSerializer(serializers.ModelSerializer):
@@ -81,3 +87,11 @@ class BillgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
         fields = ['id', 'group', 'amount', 'billname', 'bill_participants', 'billdate']
+
+class GroupDetailSerializer(serializers.ModelSerializer):
+    members = GroupMemberSerializer(source='groupmember_set', many=True, read_only=True)
+    bills = BillgetSerializer(source='bill_set', many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'groupowner', 'members', 'bills', 'created_at']

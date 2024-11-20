@@ -289,3 +289,26 @@ class SettlementView(APIView):
             "message": "Debt paid and settlement deleted successfully!"
         }, status=status.HTTP_200_OK)
        
+
+class GroupDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request,id, *args, **kwargs):
+        group_id = id
+        try:
+            group = Tripgroup.objects.get(id=group_id)
+
+            group_serializer = TripgroupSerializer(group)
+            
+            expenses = addedexp.objects.filter(group=group)
+            expense_serializer = AddedExpSerializer(expenses, many=True)
+            
+            response_data = {
+                "group": group_serializer.data,
+                "expenses": expense_serializer.data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        except Tripgroup.DoesNotExist:
+            return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)

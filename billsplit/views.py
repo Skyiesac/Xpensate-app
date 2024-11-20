@@ -11,7 +11,7 @@ from .models import *
 import json
 from django.db.models import Q
 
-class DashboardView(APIView):
+class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
 
   def get(self,request, *args, **kwargs):
@@ -159,7 +159,6 @@ class CreateBillView(APIView):
         return Response({
             "success": "True",
             "message": "Bill and participants added successfully",
-            "bill": request.data
         }, status=status.HTTP_201_CREATED)
 
 
@@ -192,7 +191,7 @@ class MarkAsPaidView(APIView):
             "message": "Participant marked as paid successfully"
         }, status=status.HTTP_200_OK)
     
-class Recentsplits(APIView):
+class RecentsplitsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -202,4 +201,16 @@ class Recentsplits(APIView):
         return Response({
             "success": "True",
               "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+class GroupDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Group, id=id)
+        
+        serializer = GroupDetailSerializer(group)
+        return Response({
+            "success": True,
+            "data": serializer.data
         }, status=status.HTTP_200_OK)

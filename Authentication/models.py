@@ -49,7 +49,8 @@ class User(AbstractBaseUser):
     currency_rate= models.DecimalField(default=1 , max_digits=10, decimal_places=6)
     monthlylimit=models.IntegerField(null=True, blank=True)
     currency=models.CharField(max_length=3, null=True, blank=True)
-
+    income=models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    profile_image= models.ImageField(null=True, blank=True, upload_to='profile_pics/')
 
     objects = UserManager()
 

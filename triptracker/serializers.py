@@ -5,7 +5,7 @@ from Authentication.models import User
 
 class TripMemberSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
-    group = serializers.SlugRelatedField(slug_field='name', queryset=Tripgroup.objects.all())
+    group = serializers.SlugRelatedField(slug_field='id', queryset=Tripgroup.objects.all())
 
     class Meta:
         model = TripMember

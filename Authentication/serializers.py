@@ -75,7 +75,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         user = User.objects.create(
             email=data['email'],
-           password= Register_user.objects.get(email=data['email']).password
+           password= Register_user.objects.get(email=data['email']).password,
+           name=data['email'].split('@')[0]
         )
         if not user:
             raise serializers.ValidationError({'error': 'User with this email already exists.'})
