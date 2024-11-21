@@ -11,4 +11,12 @@ class ExpensesSerializer(serializers.ModelSerializer):
     class Meta:
         model = expenses
         fields = ['id','amount', 'note','date','time','category', 'image', 'is_credit']
-   
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        user = request.user
+        currency_rate = user.currency_rate 
+
+        validated_data['amount'] = validated_data['amount'] / currency_rate
+
+        return super().create(validated_data)
