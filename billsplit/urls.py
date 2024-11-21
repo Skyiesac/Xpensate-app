@@ -12,7 +12,6 @@ urlpatterns = [
      path('recentsplits/', RecentsplitsView.as_view()),  #bill id
      
      path('groupdetail/<int:id>/', GroupDetailView.as_view()),  #bill id
-     
-   
+      
      
 ]

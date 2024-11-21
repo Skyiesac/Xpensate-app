@@ -12,7 +12,7 @@ from .utils import *
 import json
 from django.db import transaction
 
-# Create your views here.
+#To create a group 
 class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
 
@@ -35,12 +35,12 @@ class CreateGroupView(APIView):
                     "error": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-
+#to join group via invite code
 class JoinwcodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        invitecode = request.data.get('invitecode')
+        invitecode = request.data['invitecode']
         if not invitecode:
             return Response({
                 "success": "False",
@@ -67,6 +67,7 @@ class JoinwcodeView(APIView):
             "message": "You have successfully joined the group"
         }, status=status.HTTP_200_OK)
 
+#to add or remove members from the group
 class AddRemovememView(APIView):
     permission_classes=[IsAuthenticated]       
 
@@ -114,7 +115,7 @@ class AddRemovememView(APIView):
                 "error":"Not a member of this group"
             }, status=status.HTTP_400_BAD_REQUEST)
             
-
+#to create an expense and create settlements
 class CreateexpView(APIView):
     permission_classes=[IsAuthenticated]
 
@@ -162,6 +163,7 @@ class CreateexpView(APIView):
                 "error": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
         
+#to edit an expense and adjust settlements
 class EditExpView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -179,7 +181,7 @@ class EditExpView(APIView):
 
         old_amount = expense.amount
         paidby= expense.paidby
-        serializer = AddedExpSerializer(expense, data=request.data, partial=True)
+        serializer = AddedExpSerializer(expense, data=request.data)
         if serializer.is_valid():
             with transaction.atomic():
                 updated_exp = serializer.save()
@@ -226,7 +228,7 @@ class EditExpView(APIView):
             "error": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
-
+#to delete any expense and adjust settlements
 class DeleteexpView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -263,7 +265,7 @@ class DeleteexpView(APIView):
             "message": "Expense deleted and settlements adjusted successfully!"
         }, status=status.HTTP_200_OK)
 
-
+#to mark a debt as paid and delete the settlement
 class SettlementView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -277,7 +279,7 @@ class SettlementView(APIView):
                 "success": "False",
                 "error": "No settlement found for this user"
             }, status=status.HTTP_400_BAD_REQUEST)
-        if settlement.debter != user:
+        if settlement.creditor != user:
             return Response({
                 "success": "False",
                 "error": "You are not authorized to mark this debt as paid."
@@ -289,7 +291,7 @@ class SettlementView(APIView):
             "message": "Debt paid and settlement deleted successfully!"
         }, status=status.HTTP_200_OK)
        
-
+#to view all the details of a group
 class GroupDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -298,10 +300,10 @@ class GroupDetailsView(APIView):
         try:
             group = Tripgroup.objects.get(id=group_id)
 
-            group_serializer = TripgroupSerializer(group)
+            group_serializer = TripgroupgetSerializer(group)
             
             expenses = addedexp.objects.filter(group=group)
-            expense_serializer = AddedExpSerializer(expenses, many=True)
+            expense_serializer = AddedExpgetSerializer(expenses, many=True)
             
             response_data = {
                 "group": group_serializer.data,
@@ -312,3 +314,48 @@ class GroupDetailsView(APIView):
         
         except Tripgroup.DoesNotExist:
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+#to view all the settlements of a group
+class GroupSettlementsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Tripgroup, id=id)
+        settlements = tosettle.objects.filter(group=group)   
+        serializer = ToSettlegetSerializer(settlements, many=True)
+        return Response({
+            "success": "True",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+#to maintain debts any future debt  
+class DebtcreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args , **kwargs):
+        debter = get_object_or_404(User, email=request.data['debter'])
+        creditor = get_object_or_404(User, email=request.data['creditor'])
+        amount = request.data['amount']
+        if debter == creditor:
+            return Response({
+                "success": "False",
+                "error": "Debter and creditor cannot be the same"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({
+                "success": "False",
+                "error": "Amount must be greater than zero"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        settlement, created = tosettle.objects.get_or_create(
+                debter=debter,
+                creditor=creditor,
+                debtamount= amount
+        )
+        
+        return Response({
+            "success": "True",
+            "message": "Debt created successfully!"
+        }, status=status.HTTP_201_CREATED)

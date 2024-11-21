@@ -10,7 +10,9 @@ from django.db.models import Count, Sum
 from .models import *
 import json
 from django.db.models import Q
+from expense.models import expenses
 
+#to view all the groups of user
 class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
 
@@ -28,7 +30,7 @@ class AllGroupsView(APIView):
     }
     return Response(status=status.HTTP_200_OK, data=context)
   
-  
+# to create a new group
 class AddGroupView(CreateAPIView):
         permission_classes = [IsAuthenticated]
         serializer_class = GroupSerializer
@@ -51,7 +53,8 @@ class AddGroupView(CreateAPIView):
                     "success": "False",
                     "error": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
+#to add or view the members of the group         
 class AddRemoveMemberView(APIView):
         permission_classes = [IsAuthenticated]
         serializer_class = GroupMemberSerializer
@@ -127,7 +130,7 @@ class AddRemoveMemberView(APIView):
                 "message": "Member removed from group successfully"
             }, status=status.HTTP_200_OK)
 
-
+#to create a bill inside of a group (adding amount and share of every participant)
 class CreateBillView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = BillSerializer
@@ -162,7 +165,7 @@ class CreateBillView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-
+#to mark user as paid for the bill and update the expenses
 class MarkAsPaidView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -185,12 +188,17 @@ class MarkAsPaidView(APIView):
         billparticipant = get_object_or_404(BillParticipant, bill=bill, participant=participant)
         billparticipant.paid = True
         billparticipant.save()
-
+        if billparticipant.participant == bill.billowner:
+           expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
+        else:
+            expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
+            expenses.objects.create(user=request.user, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=True)
         return Response({
             "success": "True",
             "message": "Participant marked as paid successfully"
         }, status=status.HTTP_200_OK)
-    
+
+#for front page to let the user know about the recent splits  
 class RecentsplitsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -202,7 +210,8 @@ class RecentsplitsView(APIView):
             "success": "True",
               "data": serializer.data,
         }, status=status.HTTP_200_OK)
-    
+
+#to give the complete details of a group  and all the bills inside it  
 class GroupDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -214,3 +223,4 @@ class GroupDetailView(APIView):
             "success": True,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+    

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Group, GroupMember, Bill, BillParticipant
 from Authentication.models import User
 from django.shortcuts import get_object_or_404
-
+from triptracker.models import tosettle
 class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SlugRelatedField(slug_field='email', many=True, queryset=User.objects.all(), required=False)
     groupowner= serializers.SlugRelatedField(slug_field='email',read_only=True)
@@ -61,9 +61,10 @@ class BillSerializer(serializers.ModelSerializer):
             b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
-                amount=(percent/100) * bill.amount,
+                amount=((percent/100) * bill.amount)/request.user.currency_rate,
                
             )
+            tosettle.objects.create(debtamount=((percent/100) * bill.amount)/request.user.currency_rate, debter=participant_user.member, creditor=billowner)
             bp += [b]
        
         validated_data["bill_participants"] = bp

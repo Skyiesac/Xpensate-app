@@ -24,7 +24,6 @@ class CategorylistView(APIView):
         default_cats = [Category(name=cat) for cat in default_cat]
         
         user_categories = Category.objects.filter(user=request.user)
-        print(user_categories)
         categories= list(default_cats) + list(user_categories)
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
@@ -63,7 +62,7 @@ class CreatexpView(CreateAPIView):
             }, status=status.HTTP_201_CREATED)
         return Response({
            "success":"False",
-           "error": "serializer.error" }, status=status.HTTP_204_NO_CONTENT)
+           "error": "Data is not correct" }, status=status.HTTP_204_NO_CONTENT)
 
 class UpdateexpView(UpdateAPIView):
     permission_classes = [IsAuthenticated]
@@ -127,13 +126,15 @@ class ListExpensesView(ListAPIView):
 
     def get(self, request, *args, **kwargs):
         expense= expenses.objects.filter(user=request.user)
+        now = timezone.now()
         if expense is None:
             return Response({
                 "success":"False",
                 "message":"No expenses found."
             }, status=status.HTTP_404_NOT_FOUND)
         else:
-          total_expenses = expense.aggregate(
+          exp= expense.filter( date__year=now.year, date__month=now.month)
+          total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
@@ -162,8 +163,10 @@ class CategoryexpView(APIView):
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
-
-        total_expenses = expense.aggregate(
+        now = timezone.now()
+        exp= expense.filter( date__year=now.year, date__month=now.month)
+          
+        total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
@@ -211,8 +214,9 @@ class DaybasedexpView(APIView):
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
-
-        total_expenses = expense.aggregate(
+        now = timezone.now()
+        exp = expense.filter( date__year=now.year, date__month=now.month )
+        total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
