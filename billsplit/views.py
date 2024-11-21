@@ -10,6 +10,7 @@ from django.db.models import Count, Sum
 from .models import *
 import json
 from django.db.models import Q
+from expense.models import expenses
 
 class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
@@ -185,7 +186,11 @@ class MarkAsPaidView(APIView):
         billparticipant = get_object_or_404(BillParticipant, bill=bill, participant=participant)
         billparticipant.paid = True
         billparticipant.save()
-
+        if billparticipant.participant == bill.billowner:
+           expenses.objects.create(user=participant, amount=billparticipant.amount, category="Bill Payment", is_credit=False)
+        else:
+            expenses.objects.create(user=participant, amount=billparticipant.amount, category="Bill Payment", is_credit=False)
+            expenses.objects.create(user=request.user, amount=billparticipant.amount, category="Bill Payment", is_credit=True)
         return Response({
             "success": "True",
             "message": "Participant marked as paid successfully"
@@ -214,3 +219,4 @@ class GroupDetailView(APIView):
             "success": True,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+    

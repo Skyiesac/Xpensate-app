@@ -277,7 +277,7 @@ class SettlementView(APIView):
                 "success": "False",
                 "error": "No settlement found for this user"
             }, status=status.HTTP_400_BAD_REQUEST)
-        if settlement.debter != user:
+        if settlement.creditor != user:
             return Response({
                 "success": "False",
                 "error": "You are not authorized to mark this debt as paid."
@@ -298,10 +298,10 @@ class GroupDetailsView(APIView):
         try:
             group = Tripgroup.objects.get(id=group_id)
 
-            group_serializer = TripgroupSerializer(group)
+            group_serializer = TripgroupgetSerializer(group)
             
             expenses = addedexp.objects.filter(group=group)
-            expense_serializer = AddedExpSerializer(expenses, many=True)
+            expense_serializer = AddedExpgetSerializer(expenses, many=True)
             
             response_data = {
                 "group": group_serializer.data,
@@ -312,3 +312,47 @@ class GroupDetailsView(APIView):
         
         except Tripgroup.DoesNotExist:
             return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class GroupSettlementsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Tripgroup, id=id)
+        settlements = tosettle.objects.filter(group=group)   
+        serializer = ToSettlegetSerializer(settlements, many=True)
+        return Response({
+            "success": "True",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+class DebtcreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args , **kwargs):
+        debter = get_object_or_404(User, email=request.data['debter'])
+        creditor = get_object_or_404(User, email=request.data['creditor'])
+        amount = request.data['amount']
+        if debter == creditor:
+            return Response({
+                "success": "False",
+                "error": "Debter and creditor cannot be the same"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({
+                "success": "False",
+                "error": "Amount must be greater than zero"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        settlement, created = tosettle.objects.get_or_create(
+                debter=debter,
+                creditor=creditor,
+                debtamount= amount
+        )
+        
+        return Response({
+            "success": "True",
+            "message": "Debt created successfully!"
+        }, status=status.HTTP_201_CREATED)

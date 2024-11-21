@@ -63,7 +63,7 @@ class CreatexpView(CreateAPIView):
             }, status=status.HTTP_201_CREATED)
         return Response({
            "success":"False",
-           "error": "serializer.error" }, status=status.HTTP_204_NO_CONTENT)
+           "error": "Data is not correct" }, status=status.HTTP_204_NO_CONTENT)
 
 class UpdateexpView(UpdateAPIView):
     permission_classes = [IsAuthenticated]

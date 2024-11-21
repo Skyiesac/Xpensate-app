@@ -9,4 +9,6 @@ urlpatterns = [
     path('editexp/<int:id>/', EditExpView.as_view()),
     path('deletexp/', DeleteexpView.as_view()),
     path('tripgroup/<int:id>/', GroupDetailsView.as_view()),
+    path('tosettle/<int:id>/', GroupSettlementsView.as_view()),
+    path('debtcreate/', DebtcreateView.as_view()),
 ]
