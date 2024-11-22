@@ -56,7 +56,7 @@ class BillSerializer(serializers.ModelSerializer):
         bp = []
         for participant_data in participants_data:
             email = participant_data['participant']
-            participant_user = get_object_or_404( GroupMember , member=email, group=group)
+            participant_user = get_object_or_404(User, email=email)
             percent=participant_data['amount']
             b = BillParticipant.objects.create(
                 bill=bill,
@@ -64,7 +64,7 @@ class BillSerializer(serializers.ModelSerializer):
                 amount=((percent/100) * bill.amount)/request.user.currency_rate,
                
             )
-            tosettle.objects.create(debtamount=((percent/100) * bill.amount)/request.user.currency_rate, debter=participant_user.member, creditor=billowner)
+            tosettle.objects.create(debtamount=((percent/100) * bill.amount)/request.user.currency_rate, debter=participant_user, creditor=billowner)
             bp += [b]
        
         validated_data["bill_participants"] = bp

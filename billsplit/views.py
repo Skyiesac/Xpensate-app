@@ -36,10 +36,10 @@ class AddGroupView(CreateAPIView):
         serializer_class = GroupSerializer
 
         def post(self, request, *args, **kwargs):
-            name = request.data['name']
-            if not name:
+            if not request.data['name']:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+            name = request.data['name']
             serializer= GroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 serializer.save(groupowner=request.user)
@@ -72,7 +72,7 @@ class AddRemoveMemberView(APIView):
                     "error": "Only the group owner can add members"
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            serializer = GroupMemberSerializer(data=request.data)
+            serializer = GroupMemberSerializer(group=group, data=request.data)
             if serializer.is_valid():
                 email = serializer.validated_data['member']
                 member = User.objects.get(email=email)
@@ -143,14 +143,14 @@ class CreateBillView(APIView):
                 "error": bill_serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        group = bill_serializer.validated_data['group']
 
         if group is None:
             return Response({
                 "success": "False",
                 "error": "Group not found"
             }, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        group = bill_serializer.validated_data['group']
         if group.groupowner != request.user:
             return Response({
                 "success": "False",
@@ -171,18 +171,18 @@ class MarkAsPaidView(APIView):
 
     def post(self, request, id, *args, **kwargs):
         bill = get_object_or_404(Bill, id=id)
-        email=request.data['email']
+        
         if request.user != bill.billowner:
             return Response({
                 "success": "False",
                 "error": "Only the bill owner can mark participants as paid"
             }, status=status.HTTP_403_FORBIDDEN)
-        if not email:
+        if not request.data['email']:
             return Response({
                 "success": "False",
                 "error": "Participant email is required"
             }, status=status.HTTP_400_BAD_REQUEST)
-
+        email=request.data['email']
         participant = get_object_or_404(User, email=email)
         
         billparticipant = get_object_or_404(BillParticipant, bill=bill, participant=participant)

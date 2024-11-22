@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Category, expenses
-
+from Authentication.models import User
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
