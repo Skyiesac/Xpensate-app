@@ -111,7 +111,7 @@ class VerifyPhoneOTP(APIView):
         if otph != otp:
                 return Response({'success':'False',
                     'error':'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
-        if userotp.otp_created_at + timedelta(minutes=1)< timezone.now() :
+        if userotp.otp_created_at + timedelta(minutes=5)< timezone.now() :
                 return Response({'success':'False',
                     'error':'OTP expired, Resend OTP'}, status=status.HTTP_400_BAD_REQUEST)
         

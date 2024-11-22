@@ -52,7 +52,7 @@ class CreatexpView(CreateAPIView):
         # Make a mutable copy of the QueryDict to resolve immutable error      
         data['category'] =  data['category'].lower().capitalize()
 
-        serializer = ExpensesSerializer(data= request.data)
+        serializer = ExpensesSerializer(data= request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save(user=request.user)
 
