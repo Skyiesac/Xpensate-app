@@ -3,8 +3,15 @@ from .models import Group, GroupMember, Bill, BillParticipant
 from Authentication.models import User
 from django.shortcuts import get_object_or_404
 from triptracker.models import tosettle
+
+   
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'name','profile_image'] 
+
 class GroupSerializer(serializers.ModelSerializer):
-    members = serializers.SlugRelatedField(slug_field='email', many=True, queryset=User.objects.all(), required=False)
+    members = UserSerializer(many=True, read_only=True)
     groupowner= serializers.SlugRelatedField(slug_field='email',read_only=True)
     class Meta:
         model = Group
@@ -26,7 +33,7 @@ class GroupMemberSerializer(serializers.ModelSerializer):
 
    class Meta:
         model = GroupMember
-        fields = ['id', 'group', 'member', 'date_join']
+        fields = ['id', 'member', 'date_join']
 
 class BillParticipantSerializer(serializers.ModelSerializer):
     participant = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
@@ -45,7 +52,7 @@ class BillSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get('request')
-        group = validated_data.get('group')
+        group = validated_data['group']
         billowner = request.user
         
         participants_data = validated_data.pop('bill_participants', [])

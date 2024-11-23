@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from django.utils import timezone 
 from datetime import datetime
 import re
-import random 
+from django.utils.dateparse import parse_date
 from django.db.models import Value, DecimalField
 from django.db.models.functions import Coalesce
 from .resources import *
@@ -261,9 +261,17 @@ class Expenseexport(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs): 
-        expense = expenses.objects.filter(user=request.user)
-        
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+            expense = expenses.objects.filter(user=request.user, date__range=[start_date, end_date])
+        else:
+            expense = expenses.objects.filter(user=request.user)
+
         expense_resource = ExpensesResource().export(expense)
-        response= HttpResponse(expense_resource.csv, content_type='text/csv')
+        response = HttpResponse(expense_resource.csv, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
         return response

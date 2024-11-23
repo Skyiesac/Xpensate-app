@@ -55,16 +55,13 @@ class AddGroupView(CreateAPIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
 #to add or view the members of the group         
-class AddRemoveMemberView(APIView):
+class AddMemberView(APIView):
         permission_classes = [IsAuthenticated]
         serializer_class = GroupMemberSerializer
 
-        def post(self, request,id, *args, **kwargs):
-            group_id = id
-            group = Group.objects.get(id=group_id)
-            if group is None:
-                return Response({ "success" : "False",
-                    "error": "Group not found"}, status=status.HTTP_400_BAD_REQUEST)
+        def post(self, request, *args, **kwargs):
+            group_id = request.data['group']
+            group = get_object_or_404(Group, id=group_id)
             
             if group.groupowner != request.user:
                 return Response({
@@ -72,7 +69,7 @@ class AddRemoveMemberView(APIView):
                     "error": "Only the group owner can add members"
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            serializer = GroupMemberSerializer(group=group, data=request.data)
+            serializer = GroupMemberSerializer(data=request.data)
             if serializer.is_valid():
                 email = serializer.validated_data['member']
                 member = User.objects.get(email=email)
@@ -93,6 +90,8 @@ class AddRemoveMemberView(APIView):
                     "error": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+class RemovememberView(APIView):
+        permission_classes = [IsAuthenticated]
         #to remove the member from the group  
         def delete(self, request, id, *args, **kwargs):
             group_id = id
@@ -143,6 +142,7 @@ class CreateBillView(APIView):
                 "error": bill_serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        group = bill_serializer.validated_data['group']
 
         if group is None:
             return Response({
@@ -150,7 +150,6 @@ class CreateBillView(APIView):
                 "error": "Group not found"
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        group = bill_serializer.validated_data['group']
         if group.groupowner != request.user:
             return Response({
                 "success": "False",
