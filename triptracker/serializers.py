@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tripgroup, TripMember, addedexp, tosettle
+from .models import Tripgroup, TripMember, addedexp, tosettle , Debt
 from Authentication.models import User
 from billsplit.serializers import UserSerializer
 class TripMemberSerializer(serializers.ModelSerializer):
@@ -78,3 +78,17 @@ class ToSettlegetSerializer(serializers.ModelSerializer):
 
     def get_debter_email(self, obj):
         return obj.debter.email
+
+
+class DebtSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Debt
+        fields = ['id', 'user', 'name', 'amount', 'description', 'date', 'time', 'lend', 'is_paid']
+        read_only_fields = ['user']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        user = request.user
+        validated_data['user'] = user
+        return super().create(validated_data)
+    
