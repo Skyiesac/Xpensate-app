@@ -10,6 +10,7 @@ from rest_framework.generics import *
 from django.db.models import Count, Sum
 from .utils import *
 import json
+from django.utils.dateparse import parse_date
 from django.db import transaction
 
 #To create a group 
@@ -17,10 +18,10 @@ class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
 
         def post(self, request, *args, **kwargs):
-            name = request.data['name']
-            if not name:
+            if not request.data['name']:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+            name = request.data['name']
             serializer= TripgroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 group=serializer.save()
@@ -327,35 +328,77 @@ class GroupSettlementsView(APIView):
             "success": "True",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+    
 
-#to maintain debts any future debt  
-class DebtcreateView(APIView):
+class CreateDebtView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args , **kwargs):
-        debter = get_object_or_404(User, email=request.data['debter'])
-        creditor = get_object_or_404(User, email=request.data['creditor'])
-        amount = request.data['amount']
-        if debter == creditor:
+    def post(self, request, *args, **kwargs):
+        serializer = DebtSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
             return Response({
-                "success": "False",
-                "error": "Debter and creditor cannot be the same"
-            }, status=status.HTTP_400_BAD_REQUEST)
+                "success": "True",
+                "message": "Debt created successfully!"
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
 
-        if amount <= 0:
-            return Response({
-                "success": "False",
-                "error": "Amount must be greater than zero"
-            }, status=status.HTTP_400_BAD_REQUEST)
+class DebtListView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
 
-        settlement, created = tosettle.objects.get_or_create(
-                debter=debter,
-                creditor=creditor,
-                debtamount= amount
-        )
-        
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+
+            if not start_date or not end_date:
+                return Response({
+                    "success": "False",
+                    "error": "Invalid date format"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            debts = Debt.objects.filter(user=request.user, date__range=[start_date, end_date])
+        else:
+            debts = Debt.objects.filter(user=request.user)
+
+        serializer = DebtSerializer(debts, many=True)
         return Response({
             "success": "True",
-            "message": "Debt created successfully!"
-        }, status=status.HTTP_201_CREATED)
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+class MarkDebtAsPaidView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        if not request.data.get('debt_id'):
+            return Response({
+                "success": "False",
+                "error": "Debt ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        debt_id = request.data['debt_id']
+        debt = get_object_or_404(Debt, id=debt_id, user=request.user)
+
+        if debt.is_paid:
+            return Response({
+                "success": "False",
+                "error": "Debt is already marked as paid"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        debt.is_paid = True
+        debt.save()
+
+        serializer = DebtSerializer(debt)
+        return Response({
+            "success": "True",
+            "message": "Debt marked as paid successfully",
+        }, status=status.HTTP_200_OK)

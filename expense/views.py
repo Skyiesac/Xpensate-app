@@ -147,7 +147,7 @@ class ListExpensesView(ListAPIView):
                 Value(0, output_field=DecimalField())
             )
         )['total']
-        
+         
           expenses_list = expenses.objects.filter(user=request.user).order_by('-date', '-time')
           serializer = ExpensesSerializer(expenses_list, many=True)
 
@@ -229,7 +229,14 @@ class DaybasedexpView(APIView):
                 Value(0, output_field=DecimalField())
             )
         )['total']
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
 
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+            expense = expense.filter(date__range=[start_date, end_date])
+        
         expense_by_days = expense.values('date').annotate(
             total=Coalesce(
                 Sum(
