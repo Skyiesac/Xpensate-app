@@ -93,7 +93,7 @@ class VerifyPhoneOTP(APIView):
 
     def post(self, request, *args, **kwargs):
         contact= str(request.data['contact'])
-        otp = int(request.data.get('otp'))
+        otp = int(request.data['otp'])
         if request.data['contact'] is None:
               return Response({ 'success':'False',
                   'message':'Contact is required'}, status=status.HTTP_400_BAD_REQUEST)
