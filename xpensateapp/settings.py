@@ -15,7 +15,12 @@ from datetime import timedelta
 from decouple import config
 import dj_database_url
 import os
+import crontab
+from celery.schedules import crontab
 import cloudinary_storage
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import messaging
 # from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -48,11 +53,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'Authentication',
+    'django_celery_beat',
     'import_export',
     'expense',
     'analytics',
     'billsplit',
     'triptracker',
+    'fcm_django',
 ]
 
 MIDDLEWARE = [
@@ -180,7 +187,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+FIREBASE_SERVICE_ACCOUNT_PATH = config('FIREBASE_SERVICE_ACCOUNT_PATH')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
@@ -188,8 +195,16 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/'  
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/'
-# CELERY_ACCEPT_CONTENT = ['application/json']
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TASK_SERIALIZER = 'json'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/'  
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+CELERY_BEAT_SCHEDULE = {
+    'send-daily-notifications': {
+        'task': 'Authentication.tasks.send_daily_notifications',
+        'schedule': crontab(hour=23, minute=0),  
+    },
+}

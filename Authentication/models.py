@@ -108,3 +108,11 @@ class PhoneOTP(models.Model):
     
     def __str__(self):
         return f"{self.contact}"  
+    
+    
+class FCMToken(models.Model):
+    user = models.OneToOneField( User, on_delete=models.CASCADE)
+    fcm_token = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.email}"

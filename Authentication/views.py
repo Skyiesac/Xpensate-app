@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import *
+from .firebase_utils import *
 from .utils import send_otpphone
 import json 
 from decouple import config
@@ -155,15 +156,47 @@ class UpdatecurrencyView(APIView):
         
         user= request.user
         user.currency= currency
-        user.save()
 
         api_key=config('CURRENCY_API')
         curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
         currency_request= requests.get(curr_url).json()
         user.currency_rate= currency_request['conversion_rate']
+        user.save()
         result= currency_request['conversion_rate']
         return Response({
             "success":"True",
             "message":"Currency preference updated successfully.",
             # "value":result,
         }, status=status.HTTP_200_OK)
+    
+
+class DeviceTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        if not fcm_token:
+            return Response({'error': 'FCM token is not provided.'}, status=status.HTTP_404_NOT_FOUND)
+
+        FCMToken.objects.update_or_create(
+            user=request.user,
+            defaults={'fcm_token': fcm_token}
+        )
+        return Response({'message': 'FCM token registered successfully.'})
+
+
+class TestNotificationView(APIView):
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        if not fcm_token:
+            return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            response = send_firebase_notification(
+                fcm_token=fcm_token,
+                title="Test Notification",
+                body="This is a test message from Firebase Cloud Messaging."
+            )
+            return Response({'message': 'Notification sent successfully.', 'response': response})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
