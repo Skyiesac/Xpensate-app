@@ -68,7 +68,12 @@ class AddMemberView(APIView):
                     "success": "False",
                     "error": "Only the group owner can add members"
                 }, status=status.HTTP_403_FORBIDDEN)
-
+            if GroupMember.objects.filter(group=group, member=request.user).exists():
+                return Response({
+                    "success": "False",
+                    "error": "You are already a member."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             serializer = GroupMemberSerializer(data=request.data)
             if serializer.is_valid():
                 email = serializer.validated_data['member']
@@ -150,10 +155,10 @@ class CreateBillView(APIView):
                 "error": "Group not found"
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        if group.groupowner != request.user:
+        if not GroupMember.objects.filter(group=group, member=request.user).exists():
             return Response({
                 "success": "False",
-                "error": "Only the group owner can create bills"
+                "error": "You are not a member of this group"
             }, status=status.HTTP_403_FORBIDDEN)
 
         bill = bill_serializer.save()
@@ -188,10 +193,10 @@ class MarkAsPaidView(APIView):
         billparticipant.paid = True
         billparticipant.save()
         if billparticipant.participant == bill.billowner:
-           expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
+            expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
         else:
             expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
-            expenses.objects.create(user=request.user, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=True)
+            expenses.objects.create(user=bill.billowner, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=True)
         return Response({
             "success": "True",
             "message": "Participant marked as paid successfully"
@@ -223,3 +228,22 @@ class GroupDetailView(APIView):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
     
+class GroupMembersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        print(1, *args, **kwargs)
+        if not request.data['group']:
+            return Response({
+                "success": False,
+                "error": "Group ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        group_id = request.data['group']
+        group = get_object_or_404(Group, id=group_id)
+        group_members = GroupMember.objects.filter(group=group)
+        serializer = GroupMembergetSerializer(group_members, many=True)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)

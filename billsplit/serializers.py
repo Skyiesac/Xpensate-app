@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Group, GroupMember, Bill, BillParticipant
 from Authentication.models import User
 from django.shortcuts import get_object_or_404
-from triptracker.models import tosettle
+from triptracker.models import Debt
 
    
 class UserSerializer(serializers.ModelSerializer):
@@ -64,6 +64,10 @@ class BillSerializer(serializers.ModelSerializer):
         for participant_data in participants_data:
             email = participant_data['participant']
             participant_user = get_object_or_404(User, email=email)
+
+            if not GroupMember.objects.filter(group=group, member=participant_user).exists():
+                continue 
+
             percent=participant_data['amount']
             b = BillParticipant.objects.create(
                 bill=bill,
@@ -71,7 +75,7 @@ class BillSerializer(serializers.ModelSerializer):
                 amount=((percent/100) * bill.amount)/request.user.currency_rate,
                
             )
-            tosettle.objects.create(debtamount=((percent/100) * bill.amount)/request.user.currency_rate, debter=participant_user, creditor=billowner)
+            Debt.objects.create(amount=((percent/100) * bill.amount)/request.user.currency_rate, user=participant_user, name=billowner, description="Bill payment")
             bp += [b]
        
         validated_data["bill_participants"] = bp
@@ -103,3 +107,9 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name', 'groupowner', 'members', 'bills', 'created_at']
+
+class GroupMembergetSerializer(serializers.ModelSerializer):
+    member = UserSerializer(read_only=True)
+    class Meta:
+        model = GroupMember
+        fields = [ 'member']

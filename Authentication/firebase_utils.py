@@ -4,7 +4,6 @@ import requests
 from decouple import config
 import logging
 
-logger = logging.getLogger(__name__)
 SCOPES = ['https://www.googleapis.com/auth/firebase.messaging']
 
 def get_firebase_access_token():
