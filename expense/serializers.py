@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, expenses
+from .models import Category, expenses, Budget
 from Authentication.models import User
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -20,3 +20,10 @@ class ExpensesSerializer(serializers.ModelSerializer):
         validated_data['amount'] = validated_data['amount'] / currency_rate
 
         return super().create(validated_data)
+    
+
+class BudgetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Budget
+        fields = ['user', 'need', 'luxury', 'savings']
+       

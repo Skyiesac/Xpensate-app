@@ -9,5 +9,7 @@ urlpatterns = [
     path('list/', views.ListExpensesView.as_view()),
     path('category-expense/', views.CategoryexpView.as_view()),
     path('days-expense/', views.DaybasedexpView.as_view()),
-    path('exportexpense/', views.Expenseexport.as_view()),
+   path('create-budget/', views.CreateBudgetView.as_view(),),
+   path('monthly-limit/', views.UsermonthlyView.as_view(),),
+    
    ]

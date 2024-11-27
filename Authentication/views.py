@@ -178,23 +178,23 @@ class UpdatecurrencyView(APIView):
     
 class UpdateProfilepicView(APIView):
     permission_classes=[IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        image= request.data['image']
-        if image is None:
-            return Response({
-                "success":"False",
-                "error":"Profile image is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        serializer = ProfileImageSerializer(user, data=request.data)
         
-        user= request.user
-        user.profile_image= image
-        user.save()
-
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": "True",
+                "message": "Profile image updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
         return Response({
-            "success":"True",
-            "message":"Profile image updated successfully."
-        }, status=status.HTTP_200_OK)
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
 class DeviceTokenView(APIView):
     permission_classes = [IsAuthenticated]

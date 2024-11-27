@@ -55,7 +55,7 @@ class TripMembergetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TripMember
-        fields = ['user', 'joined_at']
+        fields = ['user']
 
 class TripgroupgetSerializer(serializers.ModelSerializer):
     members = TripMembergetSerializer(source='tripmember_set', many=True)
@@ -92,3 +92,12 @@ class DebtSerializer(serializers.ModelSerializer):
         validated_data['user'] = user
         return super().create(validated_data)
     
+class TripgroupSummarySerializer(serializers.ModelSerializer):
+    members_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tripgroup
+        fields = ['name', 'invitecode', 'members_count']
+
+    def get_members_count(self, obj):
+        return obj.members_count
