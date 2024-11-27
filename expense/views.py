@@ -287,29 +287,46 @@ class CreateBudgetView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = BudgetSerializer(data=request.data, user=request.user)
+        user = request.user
+        try:
+            budget = Budget.objects.get(user=user)
+            serializer = BudgetSerializer(budget, data=request.data, context={'request': request})
+        except Budget.DoesNotExist:
+            serializer = BudgetSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
             serializer.save()
             return Response({
                 "success": "True",
-                "message": "Budget created successfully!",
+                "message": "Budget created or updated successfully!",
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
         return Response({
             "success": "False",
             "error": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+        
+class ListBudgetsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        budget = Budget.objects.get(user=request.user)
+        serializer = BudgetSerializer(budget)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
     
 class UsermonthlyView(APIView):
    permission_classes =[IsAuthenticated]
 
    def post(self, request , *args, **kwargs):
+        limit= request.data['monthlylimit']
         if limit is None:
             return Response({
                 "success":"False",
                 "error":"Name is required"
             }, status=status.HTTP_400_BAD_REQUEST)
-        limit= request.data['monthlylimit']
         user= request.user
         user.monthlylimit= limit
         user.save()
