@@ -10,10 +10,13 @@ from .utils import send_otpphone
 import json 
 from decouple import config
 import requests
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
+    throttle_classes = [AnonRateThrottle]
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -32,6 +35,7 @@ class LoginAPIView(APIView):
 
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request, *args, **kwargs):
         print("Request Data:", request.data) 
@@ -43,6 +47,7 @@ class VerifyOTPView(APIView):
 
 class ForgetPassword(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = ForgetPassSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -51,7 +56,7 @@ class ForgetPassword(APIView):
 
 class ForgetOTPverView(APIView):
     permission_classes = [AllowAny]
-
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = verifyforgetserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -72,6 +77,7 @@ class ResetPassView(UpdateAPIView):
 
 class Sendotpphone(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request, *args, **kwargs):
        contact = request.data['contact']
@@ -91,6 +97,7 @@ class Sendotpphone(APIView):
 
 class VerifyPhoneOTP(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         contact= str(request.data['contact'])
@@ -171,23 +178,23 @@ class UpdatecurrencyView(APIView):
     
 class UpdateProfilepicView(APIView):
     permission_classes=[IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        image= request.data['image']
-        if image is None:
-            return Response({
-                "success":"False",
-                "error":"Profile image is required."
-            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        serializer = ProfileImageSerializer(user, data=request.data)
         
-        user= request.user
-        user.profile_image= image
-        user.save()
-
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": "True",
+                "message": "Profile image updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
         return Response({
-            "success":"True",
-            "message":"Profile image updated successfully."
-        }, status=status.HTTP_200_OK)
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
 class DeviceTokenView(APIView):
     permission_classes = [IsAuthenticated]
@@ -218,4 +225,4 @@ class TestNotificationView(APIView):
             )
             return Response({'message': 'Notification sent successfully.', 'response': response})
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)

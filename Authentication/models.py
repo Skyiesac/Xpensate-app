@@ -6,6 +6,8 @@ from django.utils import timezone
 from celery import shared_task 
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from storages.backends.s3boto3 import S3Boto3Storage
+
 class UserManager(BaseUserManager):
     def create_user(self, email,password=None):
         
@@ -50,7 +52,7 @@ class User(AbstractBaseUser):
     monthlylimit=models.IntegerField(null=True, blank=True)
     currency=models.CharField(max_length=3, null=True, blank=True)
     income=models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    profile_image= models.ImageField(null=True, blank=True, upload_to='profile_pics/')
+    profile_image= models.FileField(null=True, blank=True, upload_to='profile_pics/')
 
     objects = UserManager()
 

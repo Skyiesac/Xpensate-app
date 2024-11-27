@@ -198,3 +198,9 @@ class ResetPassSerializer(serializers.Serializer):
             user.save()
             EmailOTP.objects.get(email = self.validated_data['email'] ).delete()
             return user 
+
+
+class ProfileImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['profile_image']

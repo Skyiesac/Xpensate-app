@@ -9,7 +9,7 @@ from .models import *
 from rest_framework.generics import *
 from django.db.models import Count, Sum
 from .utils import *
-import json
+from django.db.models import Count, Subquery, OuterRef
 from django.utils.dateparse import parse_date
 from django.db import transaction
 
@@ -72,8 +72,8 @@ class JoinwcodeView(APIView):
 class AddRemovememView(APIView):
     permission_classes=[IsAuthenticated]       
 
-    def post(self,request,id, *args, **kwargs):
-         email=request.data['email']
+    def post(self,request,id,email, *args, **kwargs):
+         email=email
          group = Tripgroup.objects.get(id=id)
          if group is None:
                 return Response({ "success" : "False",
@@ -86,15 +86,14 @@ class AddRemovememView(APIView):
                 "error":"Already a member of this group"
             }, status=status.HTTP_400_BAD_REQUEST)
          
-         TripMember.objects.create(group=group, user=user)
-         email_for_joining(email, group.name)
+         invite_email(email,group.invitecode, group.name)
          return Response({
                 "success": "True",
-                "message": "Successfully joined the group"
+                "message": "Mail sent successfully!"
             }, status=status.HTTP_200_OK)
  
-    def delete(self, request, id , *args, **kwargs):
-         email=request.data['email']
+    def delete(self, request, id ,email, *args, **kwargs):
+         email=email
          user = get_object_or_404(User, email=email)
          group = Tripgroup.objects.get(id=id)
          if group is None:
@@ -328,8 +327,37 @@ class GroupSettlementsView(APIView):
             "success": "True",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
-    
+  
+class UserTripGroupsView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        trip_groups = Tripgroup.objects.filter(tripmember__user=user).annotate(
+            members_count=Subquery(
+                TripMember.objects.filter(group=OuterRef('pk')).values('group').annotate(
+                    count=Count('id')
+                ).values('count')
+            )
+        )
+        serializer = TripgroupSummarySerializer(trip_groups, many=True)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+class GroupMembersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        group = get_object_or_404(Tripgroup, id=id)
+        group_members = TripMember.objects.filter(group=group)
+        serializer = TripMembergetSerializer(group_members, many=True)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
 class CreateDebtView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -36,3 +36,20 @@ The Xpensate team
      recipient_list = [email]
 
      return send_mail(subject, message, from_email , recipient_list)
+
+def invite_email(email,invitecode, name):
+     subject=f"Welcome to {name}"
+     message = f"""
+Hello user,
+This is an invite mail sent to you for joing {name} group on Xpensate. 
+invite code is -{invitecode}
+Fill this code on the app to join this cool group !
+
+By-
+The Xpensate team
+"""
+     
+     from_email = settings.EMAIL_HOST_USER
+     recipient_list = [email]
+
+     return send_mail(subject, message, from_email , recipient_list)

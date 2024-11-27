@@ -68,16 +68,18 @@ class AddMemberView(APIView):
                     "success": "False",
                     "error": "Only the group owner can add members"
                 }, status=status.HTTP_403_FORBIDDEN)
-            if GroupMember.objects.filter(group=group, member=request.user).exists():
-                return Response({
-                    "success": "False",
-                    "error": "You are already a member."
-                }, status=status.HTTP_400_BAD_REQUEST)
             
             serializer = GroupMemberSerializer(data=request.data)
             if serializer.is_valid():
                 email = serializer.validated_data['member']
                 member = User.objects.get(email=email)
+
+                if GroupMember.objects.filter(group=group, member=member).exists():
+                    return Response({
+                        "success": "False",
+                        "error": "You are already a member."
+                    } ,status=status.HTTP_400_BAD_REQUEST)
+                
                 if member is None:
                     return Response({
                         "success": "False",
@@ -98,7 +100,7 @@ class AddMemberView(APIView):
 class RemovememberView(APIView):
         permission_classes = [IsAuthenticated]
         #to remove the member from the group  
-        def delete(self, request, id, *args, **kwargs):
+        def delete(self, request, id,email , *args, **kwargs):
             group_id = id
             group = Group.objects.get(id=group_id)
             if group is None:
@@ -113,7 +115,7 @@ class RemovememberView(APIView):
                     "error": "Only the group owner can remove members"
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            email = request.data.get('member')
+            email = email
             member = User.objects.filter(email=email).first()
             if member is None:
                 return Response({
