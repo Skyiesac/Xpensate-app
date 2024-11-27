@@ -319,3 +319,15 @@ class UsermonthlyView(APIView):
             "message":"Monthly limit updated successfully."
         }, status=status.HTTP_200_OK)
     
+
+class LastFourExpensesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        last_four_expenses = expenses.objects.filter(user=user).order_by('-date', '-time')[:4]
+        serializer = ExpensesSerializer(last_four_expenses, many=True)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
