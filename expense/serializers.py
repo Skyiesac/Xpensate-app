@@ -25,5 +25,17 @@ class ExpensesSerializer(serializers.ModelSerializer):
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = ['user', 'need', 'luxury', 'savings']
+        fields = ['need', 'luxury', 'savings']
        
+    def create(self, validated_data):
+        request = self.context.get('request')
+        user = request.user
+        validated_data['user'] = user
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        instance.need = validated_data.get('need', instance.need)
+        instance.luxury = validated_data.get('luxury', instance.luxury)
+        instance.savings = validated_data.get('savings', instance.savings)
+        instance.save()
+        return instance
