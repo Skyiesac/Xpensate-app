@@ -57,7 +57,7 @@ class AddedExpgetSerializer(serializers.ModelSerializer):
        user = request.user
        settlement = tosettle.objects.filter(connect=obj, debter=user).first()
        if settlement:
-              return settlement.amount
+              return settlement.debtamount
        return False
     
     def get_is_paid(self, obj):
