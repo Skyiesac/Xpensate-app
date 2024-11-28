@@ -8,4 +8,5 @@ urlpatterns = [
     path('convert-currency/',views.CurrencyConverterView.as_view()),
      path('paypal/', include("paypal.standard.ipn.urls")),
     path('payment/', views.Checkout.as_view()),
+
     ]

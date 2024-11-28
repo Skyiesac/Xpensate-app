@@ -17,6 +17,8 @@ from paypal.standard.forms import PayPalPaymentsForm
 from django.conf import settings
 from django.http import JsonResponse
 from .paypal import *
+import uuid
+from django.urls import reverse
 # Create your views here.
    
 class DaybasedGraphView(APIView):
@@ -137,6 +139,7 @@ class CurrencyConverterView(APIView):
             "success":True,
             "value":result
         }, status=status.HTTP_200_OK)
+
 
 class Checkout(APIView):
    
