@@ -40,7 +40,7 @@ class tosettle(models.Model):
      debter=models.ForeignKey(User, on_delete=models.CASCADE ,  related_name='debter_set')   #will pay
      creditor=models.ForeignKey(User, on_delete=models.CASCADE , related_name='creditor_set') #paid alr
      connect = models.ForeignKey(addedexp, on_delete=models.CASCADE, null=True) 
-
+     is_paid= models.BooleanField(default=False)
      def __str__(self):
         return f"{self.debter} owes {self.creditor} "
      
