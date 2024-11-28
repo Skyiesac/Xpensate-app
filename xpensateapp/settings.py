@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'billsplit',
     'triptracker',
     'fcm_django',
+    'paypal.standard.ipn',
 ]
 
 MIDDLEWARE = [
@@ -225,4 +226,4 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'Authentication.tasks.send_daily_notifications',
         'schedule': crontab(hour=23, minute=0),  
     },
-}
+} 
