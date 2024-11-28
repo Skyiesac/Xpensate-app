@@ -42,13 +42,29 @@ class ToSettleSerializer(serializers.ModelSerializer):
 class AddedExpgetSerializer(serializers.ModelSerializer):
     # paidby= paidbySerializer()
     paidby_email = serializers.SerializerMethodField()
+    share = serializers.SerializerMethodField()
+    is_paid = serializers.SerializerMethodField()
 
     class Meta:
         model = addedexp
-        fields = ['id',  'whatfor', 'amount', 'paidby_email']
+        fields = ['id',  'whatfor', 'amount', 'paidby_email', 'share', 'is_paid']
 
     def get_paidby_email(self, obj):
         return obj.paidby.email
+    
+    def get_share(self, obj):
+       members_count = obj.group.members.all().count()
+       if members_count:
+            return obj.amount / members_count
+       return None
+    
+    def get_is_paid(self, obj):
+            request = self.context.get('request')
+            user = request.user
+            settlement = tosettle.objects.filter(connect=obj, debter=user).first()
+            if settlement:
+                return settlement.is_paid
+            return False
 
 class TripMembergetSerializer(serializers.ModelSerializer):
     user = UserSerializer()
@@ -97,7 +113,7 @@ class TripgroupSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tripgroup
-        fields = ['name', 'invitecode', 'members_count']
+        fields = ['id','name', 'invitecode', 'members_count']
 
     def get_members_count(self, obj):
         return obj.members_count

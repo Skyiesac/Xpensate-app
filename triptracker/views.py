@@ -142,16 +142,14 @@ class CreateexpView(APIView):
                 debt_amount= added_exp.amount / memberscnt
 
                 for member in members:
-                    if member.user!=user:
-                        settlement, created = tosettle.objects.get_or_create(
+                   if member.user != user:
+                        tosettle.objects.create(
                             group=group,
                             debter=member.user,
                             creditor=user,
-                            defaults={'debtamount': debt_amount, 'connect': added_exp}
+                            debtamount=debt_amount,
+                            connect=added_exp
                         )
-                        if not created:
-                            settlement.debtamount += debt_amount
-                            settlement.save()
 
                 return Response({
                     "success": "True",
@@ -179,45 +177,26 @@ class EditExpView(APIView):
                 "error": "You are not a member of this group"
             }, status=status.HTTP_403_FORBIDDEN)
 
-        old_amount = expense.amount
-        paidby= expense.paidby
         serializer = AddedExpSerializer(expense, data=request.data)
         if serializer.is_valid():
             with transaction.atomic():
                 updated_exp = serializer.save()
 
-                if old_amount != updated_exp.amount:
-                    members = TripMember.objects.filter(group=group)
-                    members_count = members.count()
+                tosettle.objects.filter(connect=expense).delete()
+                members = TripMember.objects.filter(group=group)
+                members_count = members.count()
+                new_debt_amount = updated_exp.amount / members_count
 
-                    new_debt_amount = updated_exp.amount / members_count
-                    old_debt_amount = old_amount / members_count
-
-                    for member in members:
+                for member in members:
                         if member.user != updated_exp.paidby:
-                            settlement, created = tosettle.objects.get_or_create(
-                                group=group,
-                                debter=member.user,
-                                creditor=paidby,
-                                defaults={'debtamount': 0}
-                            )
-                            if not created:
-                                settlement.debtamount -= old_debt_amount
-                                if settlement.debtamount <= 0:
-                                    settlement.delete()
-                                else:
-                                    settlement.save()
-
-                            settlement, created = tosettle.objects.get_or_create(
+                            tosettle.objects.create(
                                 group=group,
                                 debter=member.user,
                                 creditor=updated_exp.paidby,
-                                defaults={'debtamount': new_debt_amount, 'connect': updated_exp}
+                                debtamount=new_debt_amount,
+                                connect=updated_exp
                             )
-                            if not created:
-                                settlement.debtamount += new_debt_amount
-                                settlement.save()
-                             
+           
                 return Response({
                     "success": "True",
                     "message": "Expense updated and settlements adjusted successfully!"
@@ -244,21 +223,7 @@ class DeleteexpView(APIView):
                 "error": "You are not a member of this group"
             }, status=status.HTTP_403_FORBIDDEN)
 
-        with transaction.atomic():
-            members = TripMember.objects.filter(group=group)
-            members_count = members.count()
-            debt_amount = expen.amount / members_count
-
-            for member in members:
-                if member.user != expen.paidby:
-                    settlement = tosettle.objects.get(group=group, debter=member.user, creditor=expen.paidby)
-                    settlement.debtamount -= debt_amount
-                    if settlement.debtamount <= 0:
-                        settlement.delete()
-                    else:
-                        settlement.save()
-
-            expen.delete()
+        tosettle.objects.filter(connect=expen).delete()
 
         return Response({
             "success": "True",
@@ -303,7 +268,7 @@ class GroupDetailsView(APIView):
             group_serializer = TripgroupgetSerializer(group)
             
             expenses = addedexp.objects.filter(group=group)
-            expense_serializer = AddedExpgetSerializer(expenses, many=True)
+            expense_serializer = AddedExpgetSerializer(expenses, many=True, context={'request': request})
             
             response_data = {
                 "group": group_serializer.data,

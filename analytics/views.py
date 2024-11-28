@@ -13,6 +13,10 @@ import numpy as np
 import requests
 import json
 from decouple import config
+from paypal.standard.forms import PayPalPaymentsForm
+from django.conf import settings
+import uuid
+from django.urls import reverse
 # Create your views here.
    
 class DaybasedGraphView(APIView):
@@ -134,3 +138,24 @@ class CurrencyConverterView(APIView):
             "value":result
         }, status=status.HTTP_200_OK)
 
+class PaymentView(APIView):
+   
+   def post(self, request, *args, **kwargs):
+      email= request.data['email']
+      amount=request.data['amount']
+      host=request.user
+      paypal_checkout ={
+         
+         'business':email,  #reciever
+         'amount':amount,
+          'invoice':uuid.uuid4(),
+          'currency_code':'INR',
+          'notify_url': f"http://{host}{reverse('paypal-ipn')}",
+          'return_url': f"http://{host}{reverse('paypal-ipn')}" 
+      }
+
+    #   paypal_payments= PayPalPaymentsForm(initial= paypal_checkout)
+
+    #   context={
+    #      'product': 
+    #   }
