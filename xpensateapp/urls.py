@@ -27,5 +27,5 @@ urlpatterns = [
     path('analytics/', include('analytics.urls')),
     path('split/', include('billsplit.urls')),
     path('triptrack/', include('triptracker.urls')),
-    path('', include('paypal.standard.ipn.urls')),
+
 ] 

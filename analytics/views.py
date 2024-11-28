@@ -15,6 +15,8 @@ import json
 from decouple import config
 from paypal.standard.forms import PayPalPaymentsForm
 from django.conf import settings
+from django.http import JsonResponse
+from .paypal import *
 import uuid
 from django.urls import reverse
 # Create your views here.
@@ -138,24 +140,24 @@ class CurrencyConverterView(APIView):
             "value":result
         }, status=status.HTTP_200_OK)
 
-class PaymentView(APIView):
+
+class Checkout(APIView):
    
    def post(self, request, *args, **kwargs):
-      email= request.data['email']
-      amount=request.data['amount']
-      host=request.user
-      paypal_checkout ={
-         
-         'business':email,  #reciever
-         'amount':amount,
-          'invoice':uuid.uuid4(),
-          'currency_code':'INR',
-          'notify_url': f"http://{host}{reverse('paypal-ipn')}",
-          'return_url': f"http://{host}{reverse('paypal-ipn')}" 
-      }
+        try:
+            data = json.loads(request.body)
+            sender_email = data["sender_email"]
+            receiver_email = data["receiver_email"]
+            amount = data["amount"]
 
-    #   paypal_payments= PayPalPaymentsForm(initial= paypal_checkout)
+            response = create_payout(sender_email, receiver_email, amount)
 
-    #   context={
-    #      'product': 
-    #   }
+            if response["status"] == "SUCCESS":
+                return JsonResponse({"message": "Payment sent successfully", "payout_batch_id": response["payout_batch_id"]})
+            else:
+                return JsonResponse({"message": "Payment failed", "error": response["error"]}, status=status.HTTP_400_BAD_REQUEST)
+
+        except KeyError as e:
+            return JsonResponse({"message": f"Missing field: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return JsonResponse({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
