@@ -200,7 +200,7 @@ class DeviceTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        fcm_token = request.data.get('fcm_token')
+        fcm_token = request.data['fcm_token']
         if not fcm_token:
             return Response({'error': 'FCM token is not provided.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -213,7 +213,7 @@ class DeviceTokenView(APIView):
 
 class TestNotificationView(APIView):
     def post(self, request):
-        fcm_token = request.data.get('fcm_token')
+        fcm_token = request.data['fcm_token']
         if not fcm_token:
             return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -245,7 +245,7 @@ class SettlementView(APIView):
                 "success": "False",
                 "error": "No settlement found for this user"
             }, status=status.HTTP_400_BAD_REQUEST)
-        if settlement.creditor != user:
+        if settlement.debter != user:
             return Response({
                 "success": "False",
                 "error": "You are not authorized to mark this debt as paid."

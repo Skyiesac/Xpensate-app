@@ -48,9 +48,7 @@ Do not share your otp with anyone.
 """
      from_email = settings.EMAIL_HOST_USER
      recipient_list = [email]
-     print(90)
      try:
-        print(2)
         send_mail(subject, message, from_email, recipient_list)
         print("Email sent successfully.")
      except Exception as e:
