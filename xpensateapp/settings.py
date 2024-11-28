@@ -83,6 +83,9 @@ REST_FRAMEWORK = {
     },
 }
 
+CSRF_TRUSTED_ORIGINS = ['http://13.201.141.215/','https://xpensate-app-dev.onrender.com/', 'https://127.0.0.1']
+
+
 ROOT_URLCONF = 'xpensateapp.urls'
 
 TEMPLATES = [

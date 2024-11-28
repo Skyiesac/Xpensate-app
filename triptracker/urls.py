@@ -11,6 +11,8 @@ urlpatterns = [
     path('tripgroup/<int:id>/', GroupDetailsView.as_view()),
     path('tosettle/', SettlementView.as_view()),
     path('usergroups/',UserTripGroupsView.as_view()),
+    path('usershares/<int:id>/', UsershareView.as_view()),
+    path('eachperson/share/<int:id>/', GroupAmountsView.as_view()),
     path('groupdetail/<int:id>/',GroupMembersView.as_view()),
     #debts
     path('createdebt/', CreateDebtView.as_view()),

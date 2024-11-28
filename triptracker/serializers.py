@@ -53,10 +53,12 @@ class AddedExpgetSerializer(serializers.ModelSerializer):
         return obj.paidby.email
     
     def get_share(self, obj):
-       members_count = obj.group.members.all().count()
-       if members_count:
-            return obj.amount / members_count
-       return None
+       request = self.context.get('request')
+       user = request.user
+       settlement = tosettle.objects.filter(connect=obj, debter=user).first()
+       if settlement:
+              return settlement.amount
+       return False
     
     def get_is_paid(self, obj):
             request = self.context.get('request')

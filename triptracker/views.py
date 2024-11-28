@@ -397,3 +397,84 @@ class MarkDebtAsPaidView(APIView):
             "success": "True",
             "message": "Debt marked as paid successfully",
         }, status=status.HTTP_200_OK)
+    
+
+class UsershareView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request , id , *args , **kwargs):
+        user=request.user
+        group_id=id
+        group= get_object_or_404(Tripgroup, id=group_id)
+        try:
+            trip_mem = TripMember.objects.get(group=group, user=request.user)
+        except :
+            return Response({
+                "success": "False",
+                "error": "You are not a member of this group"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        shares=[]
+        members = TripMember.objects.filter(group=group)
+        for member in members :
+            
+            if member.user != user:
+                
+                creditor_sum = tosettle.objects.filter(
+                    group=group,
+                    creditor=user,
+                    debter=member.user,
+                    is_paid=False
+                ).aggregate(total=Sum('debtamount'))['total'] or 0
+                
+                debter_sum = tosettle.objects.filter(
+                    group=group,
+                    debter=user,
+                    creditor=member.user,
+                    is_paid=False
+                ).aggregate(total=Sum('debtamount'))['total'] or 0
+                
+               
+                shares.append({
+                    "member": member.user.email,
+                     "money": creditor_sum - debter_sum
+                })
+
+        return Response({
+            "success": True,
+            "user_shares": shares
+        }, status=status.HTTP_200_OK)
+
+class GroupAmountsView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        user=request.user
+        group_id=id
+        group= get_object_or_404(Tripgroup, id=group_id)
+        try:
+            trip_mem = TripMember.objects.get(group=group, user=request.user)
+        except :
+            return Response({
+                "success": "False",
+                "error": "You are not a member of this group"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        personamount=[]
+        members= TripMember.objects.filter(group=group)
+        for member in members:
+             totalsum = addedexp.objects.filter(
+                    group=group,
+                    paidby=member.user,
+                ).aggregate(total=Sum('amount'))['total'] or 0
+             
+             personamount.append({
+                 "member": member.user.email,
+                  "money": totalsum
+                })
+             
+        return Response({
+            "success":"True",
+            "personshare":personamount
+        }, status=status.HTTP_200_OK)
+       
