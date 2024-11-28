@@ -20,7 +20,7 @@ class CategorylistView(APIView):
     permission_classes=[IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
-        default_cat = ['Food', 'Bills','Shopping','Groceries', 'Fare','Travel','Others']
+        default_cat = ['Food and Drinks', 'Shopping', 'Housing', 'Transportation', 'Life & Entertainment', 'Technical Appliance', 'Income', 'Investment', 'Others']
         default_cats = [Category(name=cat) for cat in default_cat]
         
         user_categories = Category.objects.filter(user=request.user)
@@ -40,7 +40,7 @@ class CreatexpView(CreateAPIView):
            return Response({'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
         
         category= category.lower().capitalize()
-        if category not in ['Food', 'Bills','Shopping','Groceries', 'Fare','Travel','Others']:
+        if category not in ['Food and Drinks', 'Shopping', 'Housing', 'Transportation', 'Life & Entertainment', 'Technical Appliance', 'Income', 'Investment', 'Others']:
           if not Category.objects.filter(name=category, user=request.user).exists():
             Category.objects.create(
                user=request.user,
@@ -86,7 +86,7 @@ class UpdateexpView(UpdateAPIView):
            return Response({'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
         
         category= category.lower().capitalize()
-        if category not in ['Food', 'Bills','Shopping','Groceries', 'Fare','Travel','Others']:
+        if category not in['Food and Drinks', 'Shopping', 'Housing', 'Transportation', 'Life & Entertainment', 'Technical Appliance', 'Income', 'Investment', 'Others']:
           if not Category.objects.filter(name=category, user=request.user).exists():
             cat= Category.objects.create(
                user=request.user,
