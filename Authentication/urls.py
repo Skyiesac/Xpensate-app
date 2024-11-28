@@ -20,4 +20,9 @@ urlpatterns = [
    path('phone/otpverify/', VerifyPhoneOTP.as_view()),
   path('username/', UpdateUsernameView.as_view()),
   path('addcurrency/', UpdatecurrencyView.as_view()),
+  path('addprofileimage', UpdateProfilepicView.as_view()),
+
+  #notification
+    path('recive/devicetoken/', DeviceTokenView.as_view()),
+    path('testingnotifs/', TestNotificationView.as_view()),
 ]

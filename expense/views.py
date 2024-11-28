@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from django.utils import timezone 
 from datetime import datetime
 import re
-import random 
+from django.utils.dateparse import parse_date
 from django.db.models import Value, DecimalField
 from django.db.models.functions import Coalesce
 from .resources import *
@@ -24,7 +24,6 @@ class CategorylistView(APIView):
         default_cats = [Category(name=cat) for cat in default_cat]
         
         user_categories = Category.objects.filter(user=request.user)
-        print(user_categories)
         categories= list(default_cats) + list(user_categories)
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
@@ -53,7 +52,7 @@ class CreatexpView(CreateAPIView):
         # Make a mutable copy of the QueryDict to resolve immutable error      
         data['category'] =  data['category'].lower().capitalize()
 
-        serializer = ExpensesSerializer(data= request.data)
+        serializer = ExpensesSerializer(data= request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save(user=request.user)
 
@@ -63,7 +62,7 @@ class CreatexpView(CreateAPIView):
             }, status=status.HTTP_201_CREATED)
         return Response({
            "success":"False",
-           "error": "serializer.error" }, status=status.HTTP_204_NO_CONTENT)
+           "error": "Data is not correct" }, status=status.HTTP_204_NO_CONTENT)
 
 class UpdateexpView(UpdateAPIView):
     permission_classes = [IsAuthenticated]
@@ -127,13 +126,15 @@ class ListExpensesView(ListAPIView):
 
     def get(self, request, *args, **kwargs):
         expense= expenses.objects.filter(user=request.user)
+        now = timezone.now()
         if expense is None:
             return Response({
                 "success":"False",
                 "message":"No expenses found."
             }, status=status.HTTP_404_NOT_FOUND)
         else:
-          total_expenses = expense.aggregate(
+          exp= expense.filter( date__year=now.year, date__month=now.month)
+          total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
@@ -146,7 +147,7 @@ class ListExpensesView(ListAPIView):
                 Value(0, output_field=DecimalField())
             )
         )['total']
-        
+         
           expenses_list = expenses.objects.filter(user=request.user).order_by('-date', '-time')
           serializer = ExpensesSerializer(expenses_list, many=True)
 
@@ -162,8 +163,10 @@ class CategoryexpView(APIView):
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
-
-        total_expenses = expense.aggregate(
+        now = timezone.now()
+        exp= expense.filter( date__year=now.year, date__month=now.month)
+          
+        total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
@@ -211,8 +214,9 @@ class DaybasedexpView(APIView):
    
     def get(self, request, *args, **kwargs):
         expense = expenses.objects.filter(user=request.user)
-
-        total_expenses = expense.aggregate(
+        now = timezone.now()
+        exp = expense.filter( date__year=now.year, date__month=now.month )
+        total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
                     Case(
@@ -225,7 +229,14 @@ class DaybasedexpView(APIView):
                 Value(0, output_field=DecimalField())
             )
         )['total']
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
 
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+            expense = expense.filter(date__range=[start_date, end_date])
+        
         expense_by_days = expense.values('date').annotate(
             total=Coalesce(
                 Sum(
@@ -257,9 +268,83 @@ class Expenseexport(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs): 
-        expense = expenses.objects.filter(user=request.user)
-        
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        if start_date and end_date:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+            expense = expenses.objects.filter(user=request.user, date__range=[start_date, end_date])
+        else:
+            expense = expenses.objects.filter(user=request.user)
+
         expense_resource = ExpensesResource().export(expense)
-        response= HttpResponse(expense_resource.csv, content_type='text/csv')
+        response = HttpResponse(expense_resource.csv, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
         return response
+    
+class CreateBudgetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            budget = Budget.objects.get(user=user)
+            serializer = BudgetSerializer(budget, data=request.data, context={'request': request})
+        except Budget.DoesNotExist:
+            serializer = BudgetSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": "True",
+                "message": "Budget created or updated successfully!",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+class ListBudgetsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        budget = Budget.objects.get(user=request.user)
+        serializer = BudgetSerializer(budget)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+class UsermonthlyView(APIView):
+   permission_classes =[IsAuthenticated]
+
+   def post(self, request , *args, **kwargs):
+        limit= request.data['monthlylimit']
+        if limit is None:
+            return Response({
+                "success":"False",
+                "error":"Name is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        user= request.user
+        user.monthlylimit= limit
+        user.save()
+
+        return Response({
+            "success":"True",
+            "message":"Monthly limit updated successfully."
+        }, status=status.HTTP_200_OK)
+    
+
+class LastFourExpensesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        last_four_expenses = expenses.objects.filter(user=user).order_by('-date', '-time')[:4]
+        serializer = ExpensesSerializer(last_four_expenses, many=True)
+        return Response({
+            "success": True,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)

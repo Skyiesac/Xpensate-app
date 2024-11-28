@@ -39,6 +39,12 @@ class PhoneOTPModelAdmin(admin.ModelAdmin):
   fieldsets = (
       ('Details', {'fields': ('contact', 'otp',)}),
   )
+
+class FCMTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'fcm_token')
+    search_fields = ('user__email', 'fcm_token')
+
+admin.site.register(FCMToken, FCMTokenAdmin)
 admin.site.register(User, UserModelAdmin)
 admin.site.register(EmailOTP, EmailOTPModelAdmin)
 admin.site.register(PhoneOTP, PhoneOTPModelAdmin)

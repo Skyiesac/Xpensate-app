@@ -75,7 +75,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         user = User.objects.create(
             email=data['email'],
-           password= Register_user.objects.get(email=data['email']).password
+           password= Register_user.objects.get(email=data['email']).password,
+           name=data['email'].split('@')[0]
         )
         if not user:
             raise serializers.ValidationError({'error': 'User with this email already exists.'})
@@ -197,3 +198,9 @@ class ResetPassSerializer(serializers.Serializer):
             user.save()
             EmailOTP.objects.get(email = self.validated_data['email'] ).delete()
             return user 
+
+
+class ProfileImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['profile_image']

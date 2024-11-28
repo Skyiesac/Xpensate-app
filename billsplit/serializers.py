@@ -2,9 +2,16 @@ from rest_framework import serializers
 from .models import Group, GroupMember, Bill, BillParticipant
 from Authentication.models import User
 from django.shortcuts import get_object_or_404
+from triptracker.models import Debt
+
+   
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'name','profile_image'] 
 
 class GroupSerializer(serializers.ModelSerializer):
-    members = serializers.SlugRelatedField(slug_field='email', many=True, queryset=User.objects.all(), required=False)
+    members = UserSerializer(many=True, read_only=True)
     groupowner= serializers.SlugRelatedField(slug_field='email',read_only=True)
     class Meta:
         model = Group
@@ -26,7 +33,7 @@ class GroupMemberSerializer(serializers.ModelSerializer):
 
    class Meta:
         model = GroupMember
-        fields = ['id', 'group', 'member', 'date_join']
+        fields = ['id', 'member', 'date_join']
 
 class BillParticipantSerializer(serializers.ModelSerializer):
     participant = serializers.SlugRelatedField(slug_field='email', queryset=User.objects.all())
@@ -45,7 +52,7 @@ class BillSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get('request')
-        group = validated_data.get('group')
+        group = validated_data['group']
         billowner = request.user
         
         participants_data = validated_data.pop('bill_participants', [])
@@ -56,16 +63,53 @@ class BillSerializer(serializers.ModelSerializer):
         bp = []
         for participant_data in participants_data:
             email = participant_data['participant']
-            participant_user = get_object_or_404( GroupMember , member=email, group=group)
+            participant_user = get_object_or_404(User, email=email)
+
+            if not GroupMember.objects.filter(group=group, member=participant_user).exists():
+                continue 
+
+            percent=participant_data['amount']
             b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
-                amount=participant_data['amount'],
+                amount=((percent/100) * bill.amount)/request.user.currency_rate,
                
             )
+            Debt.objects.create(amount=((percent/100) * bill.amount)/request.user.currency_rate, user=participant_user, name=billowner, description="Bill payment")
             bp += [b]
        
         validated_data["bill_participants"] = bp
    
         return bill
     
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'name','profile_image'] 
+
+class BillParticipantget(serializers.ModelSerializer):
+    participant = UserSerializer(read_only=True) 
+    class Meta:
+        model = BillParticipant
+        fields = [ 'participant', 'amount', 'paid']
+
+
+class BillgetSerializer(serializers.ModelSerializer):
+    bill_participants = BillParticipantget(source='billparticipant_set', many=True, required=False)
+    class Meta:
+        model = Bill
+        fields = ['id', 'group', 'amount', 'billname', 'bill_participants', 'billdate']
+
+class GroupDetailSerializer(serializers.ModelSerializer):
+    members = GroupMemberSerializer(source='groupmember_set', many=True, read_only=True)
+    bills = BillgetSerializer(source='bill_set', many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'groupowner', 'members', 'bills', 'created_at']
+
+class GroupMembergetSerializer(serializers.ModelSerializer):
+    member = UserSerializer(read_only=True)
+    class Meta:
+        model = GroupMember
+        fields = [ 'member']

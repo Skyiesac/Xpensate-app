@@ -6,6 +6,8 @@ from django.utils import timezone
 from celery import shared_task 
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from storages.backends.s3boto3 import S3Boto3Storage
+
 class UserManager(BaseUserManager):
     def create_user(self, email,password=None):
         
@@ -49,7 +51,8 @@ class User(AbstractBaseUser):
     currency_rate= models.DecimalField(default=1 , max_digits=10, decimal_places=6)
     monthlylimit=models.IntegerField(null=True, blank=True)
     currency=models.CharField(max_length=3, null=True, blank=True)
-
+    income=models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    profile_image= models.FileField(null=True, blank=True, upload_to='profile_pics/')
 
     objects = UserManager()
 
@@ -107,3 +110,11 @@ class PhoneOTP(models.Model):
     
     def __str__(self):
         return f"{self.contact}"  
+    
+    
+class FCMToken(models.Model):
+    user = models.OneToOneField( User, on_delete=models.CASCADE)
+    fcm_token = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.email}"

@@ -21,9 +21,18 @@ class expenses(models.Model):
     category = models.CharField(blank=False, max_length=50)
 
     user = models.ForeignKey(User, on_delete= models.CASCADE)
-    image = models.ImageField(null=True, blank=True, upload_to ='upload_pics/')
+    image = models.FileField(null=True, blank=True, upload_to ='upload_pics/')
     is_credit= models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.amount}"
 
+   
+class Budget(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    need = models.IntegerField( default=0)
+    luxury = models.IntegerField( default=0)
+    savings = models.IntegerField( default=0)
+
+    def __str__(self):
+        return f"{self.user.email}"

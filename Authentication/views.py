@@ -5,11 +5,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import *
+from .firebase_utils import *
 from .utils import send_otpphone
 import json 
+from decouple import config
+import requests
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
+    throttle_classes = [AnonRateThrottle]
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -28,6 +35,7 @@ class LoginAPIView(APIView):
 
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request, *args, **kwargs):
         print("Request Data:", request.data) 
@@ -39,6 +47,7 @@ class VerifyOTPView(APIView):
 
 class ForgetPassword(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = ForgetPassSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -47,7 +56,7 @@ class ForgetPassword(APIView):
 
 class ForgetOTPverView(APIView):
     permission_classes = [AllowAny]
-
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = verifyforgetserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -68,6 +77,7 @@ class ResetPassView(UpdateAPIView):
 
 class Sendotpphone(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request, *args, **kwargs):
        contact = request.data['contact']
@@ -87,10 +97,11 @@ class Sendotpphone(APIView):
 
 class VerifyPhoneOTP(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         contact= str(request.data['contact'])
-        otp = int(request.data.get('otp'))
+        otp = int(request.data['otp'])
         if request.data['contact'] is None:
               return Response({ 'success':'False',
                   'message':'Contact is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -108,7 +119,7 @@ class VerifyPhoneOTP(APIView):
         if otph != otp:
                 return Response({'success':'False',
                     'error':'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
-        if userotp.otp_created_at + timedelta(minutes=1)< timezone.now() :
+        if userotp.otp_created_at + timedelta(minutes=5)< timezone.now() :
                 return Response({'success':'False',
                     'error':'OTP expired, Resend OTP'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -152,9 +163,66 @@ class UpdatecurrencyView(APIView):
         
         user= request.user
         user.currency= currency
-        user.save()
 
+        api_key=config('CURRENCY_API')
+        curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
+        currency_request= requests.get(curr_url).json()
+        user.currency_rate= currency_request['conversion_rate']
+        user.save()
+        result= currency_request['conversion_rate']
         return Response({
             "success":"True",
-            "message":"Currency preference updated successfully."
+            "message":"Currency preference updated successfully.",
+            # "value":result,
         }, status=status.HTTP_200_OK)
+    
+class UpdateProfilepicView(APIView):
+    permission_classes=[IsAuthenticated]
+    
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        serializer = ProfileImageSerializer(user, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": "True",
+                "message": "Profile image updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            "success": "False",
+            "error": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+class DeviceTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        if not fcm_token:
+            return Response({'error': 'FCM token is not provided.'}, status=status.HTTP_404_NOT_FOUND)
+
+        FCMToken.objects.update_or_create(
+            user=request.user,
+            defaults={'fcm_token': fcm_token}
+        )
+        return Response({'message': 'FCM token registered successfully.'})
+
+
+class TestNotificationView(APIView):
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        if not fcm_token:
+            return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            response = send_firebase_notification(
+                fcm_token=fcm_token,
+                title="Test Notification",
+                body="This is a test message from Firebase Cloud Messaging."
+            )
+            return Response({'message': 'Notification sent successfully.', 'response': response})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)

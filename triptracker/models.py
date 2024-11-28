@@ -3,6 +3,7 @@ from Authentication.models import User
 from django.core.validators import MinValueValidator
 from .utils import generate_invite_code
 from decimal import Decimal
+from datetime import date, datetime
 # Create your models here.
 
 class Tripgroup(models.Model):
@@ -34,7 +35,7 @@ class addedexp(models.Model):
         return self.whatfor
     
 class tosettle(models.Model):
-     group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE)
+     group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE , null=True)
      debtamount=models.DecimalField(max_digits=10, decimal_places=2 , validators=[MinValueValidator(Decimal("1.00"))])
      debter=models.ForeignKey(User, on_delete=models.CASCADE ,  related_name='debter_set')   #will pay
      creditor=models.ForeignKey(User, on_delete=models.CASCADE , related_name='creditor_set') #paid alr
@@ -42,3 +43,17 @@ class tosettle(models.Model):
 
      def __str__(self):
         return f"{self.debter} owes {self.creditor} "
+     
+
+class Debt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  
+    name = models.CharField(max_length=255)  #topay
+    amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("1.00"))])
+    description = models.CharField(max_length=255, blank=True)
+    date= models.DateField(default=date.today)
+    time= models.TimeField(default=datetime.now().time())
+    lend = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.name} - {self.amount}"

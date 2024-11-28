@@ -13,6 +13,10 @@ import numpy as np
 import requests
 import json
 from decouple import config
+from paypal.standard.forms import PayPalPaymentsForm
+from django.conf import settings
+import uuid
+from django.urls import reverse
 # Create your views here.
    
 class DaybasedGraphView(APIView):
@@ -134,20 +138,26 @@ class CurrencyConverterView(APIView):
             "value":result
         }, status=status.HTTP_200_OK)
 
-class CurrencyAppView(APIView):
-   permission_classes= [IsAuthenticated]
+class Checkout(APIView):
+   
+   def post(self, request, *args, **kwargs):
+      email= request.data['email']
+      amount=request.data['amount']
+      paypal_checkout ={
+         
+         'business':email,  #reciever
+         'amount':amount,
+          'invoice':uuid.uuid4(),
+          'currency_code':'INR',
+          'notify_url':request.build_absolute_uri(reverse('paypal-ipn')),
+          'success_url' :request.build_absolute_uri(reverse('paypal-success')) ,
+           'return_url': request.build_absolute_uri(reverse('your-return-view'))
+      }
 
-   def get(self, request, *args , **kwargs):
-        user= request.user
-        currency= user.currency
-        api_key=config('CURRENCY_API')
-        curr_url= f"https://v6.exchangerate-api.com/v6/{api_key}/pair/INR/{currency}"
-        currency_request= requests.get(curr_url).json()
-        user.currency_rate= currency_request['conversion_rate']
-        result= currency_request['conversion_rate']
-        return Response({
-            "success":True,
-            "value":result,
-            "value":user.currency_value
+      paypal_payments= PayPalPaymentsForm(initial= paypal_checkout)
+
+      context={ 'form': paypal_payments  }
+      return Response({
+           "success":True,
+           "message":"Check payments !"
         }, status=status.HTTP_200_OK)
-    

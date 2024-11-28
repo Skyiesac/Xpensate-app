@@ -15,6 +15,12 @@ from datetime import timedelta
 from decouple import config
 import dj_database_url
 import os
+import crontab
+from celery.schedules import crontab
+import cloudinary_storage
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import messaging
 # from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,7 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG =  True
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -42,14 +48,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
     'rest_framework',
     'rest_framework_simplejwt',
     'Authentication',
+    'storages',
+    'django_celery_beat',
     'import_export',
     'expense',
     'analytics',
     'billsplit',
     'triptracker',
+    'fcm_django',
+    'paypal.standard.ipn',
 ]
 
 MIDDLEWARE = [
@@ -71,8 +83,17 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
          'rest_framework.authentication.SessionAuthentication', 
           'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+     "DEFAULT_THROTTLE_RATES": {
+        'anon': '30/hour',
+        'user': '30/hour'
+    },
 }
+
 ROOT_URLCONF = 'xpensateapp.urls'
 
 TEMPLATES = [
@@ -93,20 +114,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'xpensateapp.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = 'xpensate-images'
+AWS_S3_REGION_NAME = 'ap-south-1'
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.ap-south-1.amazonaws.com'
+AWS_S3_FILE_OVERWRITE = False
 
 DATABASES={
     "default": dj_database_url.parse(config('DATABASE_URL'))
 }
+
+STORAGES={
+    "default":{
+        "BACKEND":"storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles":{
+        "BACKEND":"storages.backends.s3boto3.S3Boto3Storage",
+        }
+}
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
@@ -118,8 +145,6 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -156,18 +181,32 @@ AUTHENTICATION_BACKENDS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# For public access to static and media files
+AWS_QUERYSTRING_AUTH = False
+
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+MEDIA_ROOT = 'media/'
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.1/howto/static-files/
+
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+STATIC_ROOT = 'static/'
+
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': config('CLOUD_NAME'),
+#     'API_KEY': config('CLOUDINARY_API'),
+#     'API_SECRET': config('CLOUDINARY_SECRET')
+# }
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ORIGIN_ALLOW_ALL = True
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
+FIREBASE_SERVICE_ACCOUNT_PATH = config('FIREBASE_SERVICE_ACCOUNT_PATH')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
@@ -175,8 +214,16 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/'  
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/'
-# CELERY_ACCEPT_CONTENT = ['application/json']
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TASK_SERIALIZER = 'json'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/'  
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+CELERY_BEAT_SCHEDULE = {
+    'send-daily-notifications': {
+        'task': 'Authentication.tasks.send_daily_notifications',
+        'schedule': crontab(hour=23, minute=0),  
+    },
+} 
