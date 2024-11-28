@@ -348,3 +348,54 @@ class LastFourExpensesView(APIView):
             "success": True,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+    
+class WeirdBudgetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+
+        current_date = timezone.now()
+        current_month = current_date.month
+        current_year = current_date.year
+
+        NEEDS_CATEGORIES = ['Food and Drinks', 'Housing', 'Transportation', 'Life & Entertainment']
+        LUXURY_CATEGORIES = ['Shopping', 'Technical Appliance', 'Income', 'Investment', 'Others']
+        needs_debit_total = expenses.objects.filter(
+            user=request.user,
+            category__in=NEEDS_CATEGORIES,
+            date__year=current_year,
+            date__month=current_month,
+            is_credit=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        luxury_debit_total = expenses.objects.filter(
+            user=request.user,
+            category__in=LUXURY_CATEGORIES,
+            date__year=current_year,
+            date__month=current_month,
+            is_credit=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        needs_credit_total = expenses.objects.filter(
+            user=request.user,
+            category__in=NEEDS_CATEGORIES,
+            date__year=current_year,
+            date__month=current_month,
+            is_credit=True
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        luxury_credit_total = expenses.objects.filter(
+            user=request.user,
+            category__in=LUXURY_CATEGORIES,
+            date__year=current_year,
+            date__month=current_month,
+            is_credit=True
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        return Response({
+            "success": True,
+            "needs_debit_total": needs_debit_total,
+            "luxury_debit_total": luxury_debit_total,
+            "needs_credit_total": needs_credit_total,
+            "luxury_credit_total": luxury_credit_total
+        }, status=status.HTTP_200_OK)

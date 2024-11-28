@@ -147,7 +147,7 @@ class CreateexpView(APIView):
                             group=group,
                             debter=member.user,
                             creditor=user,
-                            debtamount=debt_amount,
+                            debtamount=debt_amount/user.currency_rate,
                             connect=added_exp
                         )
 
@@ -193,7 +193,7 @@ class EditExpView(APIView):
                                 group=group,
                                 debter=member.user,
                                 creditor=updated_exp.paidby,
-                                debtamount=new_debt_amount,
+                                debtamount=new_debt_amount/request.user.currency_rate,
                                 connect=updated_exp
                             )
            
@@ -236,9 +236,10 @@ class SettlementView(APIView):
 
     def post(self, request, *args, **kwargs):
         group_id = request.data['group_id']
-        settle_id = request.data['settle_id']
+        exp_id=request.data['exp_id']
+        addexp= get_object_or_404(addedexp, id=exp_id)
         user= request.user
-        settlement = get_object_or_404(tosettle, group_id=group_id,id= settle_id , debter=user)
+        settlement = get_object_or_404(tosettle, group_id=group_id,connect=addexp, debter=user)
         if not settlement:
             return Response({
                 "success": "False",
@@ -250,7 +251,8 @@ class SettlementView(APIView):
                 "error": "You are not authorized to mark this debt as paid."
             }, status=status.HTTP_403_FORBIDDEN)
 
-        settlement.delete()
+        settlement.is_paid= True
+        settlement.save()
         return Response({
             "success": "True",
             "message": "Debt paid and settlement deleted successfully!"
