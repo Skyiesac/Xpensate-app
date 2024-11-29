@@ -126,15 +126,12 @@ class ListExpensesView(ListAPIView):
 
     def get(self, request, *args, **kwargs):
         expense= expenses.objects.filter(user=request.user)
-        now = timezone.now()
         
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         
         if start_date and end_date:
             expense = expense.filter(date__range=[start_date, end_date])
-        else:
-            expense = expense.filter(date__year=now.year, date__month=now.month)
 
         if expense is None:
             return Response({
