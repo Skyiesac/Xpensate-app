@@ -210,7 +210,8 @@ class RecentsplitsView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        bills = Bill.objects.filter(billparticipant__participant=user).order_by('-billdate')
+        bills = Bill.objects.filter(billparticipant__participant=user).select_related('group').prefetch_related(
+                'billparticipant_set__participant' ).order_by('-billdate')
         serializer = BillgetSerializer(bills, many=True)
         return Response({
             "success": "True",
@@ -222,8 +223,13 @@ class GroupDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id, *args, **kwargs):
-        group = get_object_or_404(Group, id=id)
-        
+        group = (
+            Group.objects.filter(id=id)
+            .select_related('groupowner')  
+            .prefetch_related(
+                'groupmember_set__member',  
+                'bill_set__billparticipant_set__participant').first()
+        )
         serializer = GroupDetailSerializer(group)
         return Response({
             "success": True,

@@ -122,7 +122,7 @@ class CreateexpView(APIView):
     def post(self, request,id, *args , **kwargs):
         group= get_object_or_404(Tripgroup, id=id)
         try:
-           trip_mem= TripMember.objects.get(group=group, user__email=request.data['paidby'])
+           trip_mem= TripMember.objects.select_related('user').filter(group=group, user__email=request.data.get('paidby')).first()
         except :
             return Response({
                 "success": "False",
@@ -264,24 +264,20 @@ class GroupDetailsView(APIView):
 
     def get(self, request,id, *args, **kwargs):
         group_id = id
-        try:
-            group = Tripgroup.objects.get(id=group_id)
+        group = get_object_or_404(Tripgroup, id=id)
+        expenses = addedexp.objects.filter(group=group).select_related( 'group','paidby' )
+        group_serializer = TripgroupgetSerializer(group)
 
-            group_serializer = TripgroupgetSerializer(group)
-            
-            expenses = addedexp.objects.filter(group=group)
-            expense_serializer = AddedExpgetSerializer(expenses, many=True, context={'request': request})
-            
-            response_data = {
-                "group": group_serializer.data,
-                "expenses": expense_serializer.data
-            }
+        # Serialize the expenses data
+        expense_serializer = AddedExpgetSerializer(expenses, many=True, context={'request': request})
 
-            return Response(response_data, status=status.HTTP_200_OK)
-        
-        except Tripgroup.DoesNotExist:
-            return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+        # Prepare the response data
+        response_data = {
+            "group": group_serializer.data,
+            "expenses": expense_serializer.data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 #to view all the settlements of a group
 class GroupSettlementsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -294,19 +290,20 @@ class GroupSettlementsView(APIView):
             "success": "True",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
-  
+from django.db.models import Count, Prefetch 
 class UserTripGroupsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        trip_groups = Tripgroup.objects.filter(tripmember__user=user).annotate(
-            members_count=Subquery(
-                TripMember.objects.filter(group=OuterRef('pk')).values('group').annotate(
-                    count=Count('id')
-                ).values('count')
-            )
-        )
+       
+        # Prefetch related members and annotate the groups with the count of members
+        trip_groups = Tripgroup.objects.prefetch_related(
+            Prefetch('tripmember_set', queryset=TripMember.objects.filter(user=user))
+        ).annotate(members_count=Count('tripmember'))
+
+        # Serialize the result
+        serializer = TripgroupSummarySerializer(trip_groups, many=True)
         serializer = TripgroupSummarySerializer(trip_groups, many=True)
         return Response({
             "success": True,
@@ -318,7 +315,7 @@ class GroupMembersView(APIView):
 
     def get(self, request, id, *args, **kwargs):
         group = get_object_or_404(Tripgroup, id=id)
-        group_members = TripMember.objects.filter(group=group)
+        group_members = TripMember.objects.filter(group=group).select_related('user')
         serializer = TripMembergetSerializer(group_members, many=True)
         return Response({
             "success": True,
@@ -415,7 +412,7 @@ class UsershareView(APIView):
             }, status=status.HTTP_403_FORBIDDEN)
         
         shares=[]
-        members = TripMember.objects.filter(group=group)
+        members = TripMember.objects.filter(group=group).select_related('group')
         for member in members :
             
             if member.user != user:
