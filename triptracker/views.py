@@ -290,20 +290,15 @@ class GroupSettlementsView(APIView):
             "success": "True",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
-from django.db.models import Count, Prefetch 
+
 class UserTripGroupsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        user = request.user
        
-        # Prefetch related members and annotate the groups with the count of members
-        trip_groups = Tripgroup.objects.prefetch_related(
-            Prefetch('tripmember_set', queryset=TripMember.objects.filter(user=user))
-        ).annotate(members_count=Count('tripmember'))
-
-        # Serialize the result
-        serializer = TripgroupSummarySerializer(trip_groups, many=True)
+        trip_groups=Tripgroup.objects.filter(tripmember__user=request.user).annotate(
+         members_count=Count('members')
+         )
         serializer = TripgroupSummarySerializer(trip_groups, many=True)
         return Response({
             "success": True,

@@ -127,13 +127,22 @@ class ListExpensesView(ListAPIView):
     def get(self, request, *args, **kwargs):
         expense= expenses.objects.filter(user=request.user)
         now = timezone.now()
+        
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if start_date and end_date:
+            expense = expense.filter(date__range=[start_date, end_date])
+        else:
+            expense = expense.filter(date__year=now.year, date__month=now.month)
+
         if expense is None:
             return Response({
                 "success":"False",
                 "message":"No expenses found."
             }, status=status.HTTP_404_NOT_FOUND)
         else:
-          exp= expense.filter( date__year=now.year, date__month=now.month)
+          exp=expense
           total_expenses = exp.aggregate(
             total=Coalesce(
                 Sum(
@@ -148,7 +157,7 @@ class ListExpensesView(ListAPIView):
             )
         )['total']
          
-          expenses_list = expenses.objects.filter(user=request.user).order_by('-date', '-time')
+          expenses_list = expense.order_by('-date', '-time')
           serializer = ExpensesSerializer(expenses_list, many=True)
 
           return Response({
