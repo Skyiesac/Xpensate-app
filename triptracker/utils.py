@@ -53,3 +53,19 @@ The Xpensate team
      recipient_list = [email]
 
      return send_mail(subject, message, from_email , recipient_list)
+
+def email_for_paying(email,member, amount, why):
+     subject=f"{amount} credited into your account"
+     message = f"""
+Hello user,
+This is to inform you that {member} user has paid you the amount of {amount}  INR. 
+(PS: This transaction is only virtual as for now , not appropriate for any legal purposes)
+
+By-
+The Xpensate team
+"""
+     
+     from_email = settings.EMAIL_HOST_USER
+     recipient_list = [email]
+
+     return send_mail(subject, message, from_email , recipient_list)

@@ -11,7 +11,7 @@ from .models import *
 import json
 from django.db.models import Q
 from expense.models import expenses
-
+from triptracker.utils import email_for_paying
 #to view all the groups of user
 class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
@@ -36,10 +36,11 @@ class AddGroupView(CreateAPIView):
         serializer_class = GroupSerializer
 
         def post(self, request, *args, **kwargs):
-            if not request.data['name']:
+            try:
+             name = request.data['name']
+            except:
                 return Response({ "success" : "False",
-                    "error": "Group name cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
-            name = request.data['name']
+                    "error": "Group name cannot be empty"}, status=status.HTTP_404_NOT_FOUND)
             serializer= GroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 serializer.save(groupowner=request.user)
@@ -60,7 +61,14 @@ class AddMemberView(APIView):
         serializer_class = GroupMemberSerializer
 
         def post(self, request, *args, **kwargs):
-            group_id = request.data['group']
+            try:
+             group_id = request.data['group']
+            except:
+                 return Response({
+                    "success": "False",
+                    "error": "Group ID is required"
+                }, status=status.HTTP_404_NOT_FOUND)
+
             group = get_object_or_404(Group, id=group_id)
             
             if group.groupowner != request.user:
@@ -199,6 +207,7 @@ class MarkAsPaidView(APIView):
         else:
             expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
             expenses.objects.create(user=bill.billowner, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=True)
+        email_for_paying(bill.billowner.email, email, billparticipant.amount , "Bill expenses" )
         return Response({
             "success": "True",
             "message": "Participant marked as paid successfully"

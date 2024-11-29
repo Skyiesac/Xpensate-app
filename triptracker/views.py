@@ -12,7 +12,7 @@ from .utils import *
 from django.db.models import Count, Subquery, OuterRef
 from django.utils.dateparse import parse_date
 from django.db import transaction
-
+from expense.models import expenses
 #To create a group 
 class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
@@ -253,6 +253,7 @@ class SettlementView(APIView):
 
         settlement.is_paid= True
         settlement.save()
+        email_for_paying(settlement.debter , settlement.creditor, settlement.debtamount, settlement.connect)
         return Response({
             "success": "True",
             "message": "Debt paid and settlement deleted successfully!"
@@ -268,16 +269,14 @@ class GroupDetailsView(APIView):
         expenses = addedexp.objects.filter(group=group).select_related( 'group','paidby' )
         group_serializer = TripgroupgetSerializer(group)
 
-        # Serialize the expenses data
         expense_serializer = AddedExpgetSerializer(expenses, many=True, context={'request': request})
 
-        # Prepare the response data
         response_data = {
             "group": group_serializer.data,
             "expenses": expense_serializer.data
         }
-
         return Response(response_data, status=status.HTTP_200_OK)
+    
 #to view all the settlements of a group
 class GroupSettlementsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -383,7 +382,10 @@ class MarkDebtAsPaidView(APIView):
 
         debt.is_paid = True
         debt.save()
-
+        if debt.lend is False:
+          expenses.objects.create(user=request.user, amount= debt.amount , category="Debts" )
+        else:
+            expenses.objects.create(user=request.user, amount= debt.amount , category="Debts" , is_credit=True)
         serializer = DebtSerializer(debt)
         return Response({
             "success": "True",

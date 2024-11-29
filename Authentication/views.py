@@ -80,9 +80,10 @@ class Sendotpphone(APIView):
     throttle_classes = [KnownUserRateThrottle]
 
     def post(self, request, *args, **kwargs):
-       contact = request.data['contact']
-       if contact is None:
-              return Response({ 'success':'False',
+       try:
+        contact = request.data['contact']
+       except:
+                 return Response({ 'success':'False',
                   'message':'Contact is required'}, status=status.HTTP_400_BAD_REQUEST)
        
        if User.objects.filter(contact=contact).exists():
@@ -135,8 +136,9 @@ class UpdateUsernameView(APIView):
     permission_classes= [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        name= request.data['name']
-        if name is None:
+        try:
+         name= request.data['name']
+        except:
             return Response({
                 "success":"False",
                 "error":"Name is required"
@@ -154,7 +156,13 @@ class UpdatecurrencyView(APIView):
     permission_classes=[IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        currency= request.data['currency']
+        try:
+         currency= request.data['currency']
+        except:
+            return Response({
+                "success":"False",
+                "error":"Currency is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         if len(currency)>3:
             return Response({
                 "success":"False",
@@ -200,8 +208,9 @@ class DeviceTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        fcm_token = request.data['fcm_token']
-        if not fcm_token:
+        try:
+         fcm_token = request.data['fcm_token']
+        except:
             return Response({'error': 'FCM token is not provided.'}, status=status.HTTP_404_NOT_FOUND)
 
         FCMToken.objects.update_or_create(
