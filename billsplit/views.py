@@ -17,8 +17,8 @@ class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
 
   def get(self,request, *args, **kwargs):
-    groups = Group.objects.filter(groupowner=request.user).annotate(member_count=Count('groupmember'))
-    othergrps = Group.objects.exclude(groupowner=request.user).filter(groupmember__member=request.user).annotate(member_count=Count('groupmember'))
+    groups = Group.objects.filter(groupowner=request.user).annotate(member_count=Count('groupmember')).select_related('groupowner')
+    othergrps = Group.objects.exclude(groupowner=request.user).filter(groupmember__member=request.user).select_related('groupowner').annotate(member_count=Count('groupmember'))
     
     groups_serializer = GroupSerializer(groups, many=True)
     othergroups_serializer = GroupSerializer(othergrps, many=True)

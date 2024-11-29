@@ -82,10 +82,6 @@ class BillSerializer(serializers.ModelSerializer):
    
         return bill
     
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['email', 'name','profile_image'] 
 
 class BillParticipantget(serializers.ModelSerializer):
     participant = UserSerializer(read_only=True) 

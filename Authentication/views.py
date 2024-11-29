@@ -10,12 +10,12 @@ from .utils import send_otpphone
 import json 
 from decouple import config
 import requests
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from .throttle import * 
 
 class RegisterAPIView(CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class= RegisterSerializer
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [AnonUserRateThrottle]
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -35,7 +35,7 @@ class LoginAPIView(APIView):
 
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [AnonUserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         print("Request Data:", request.data) 
@@ -47,7 +47,7 @@ class VerifyOTPView(APIView):
 
 class ForgetPassword(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [AnonUserRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = ForgetPassSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -56,7 +56,7 @@ class ForgetPassword(APIView):
 
 class ForgetOTPverView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [AnonRateThrottle]
+    throttle_classes = [AnonUserRateThrottle]
     def post(self, request, *args, **kwargs):
         serializer = verifyforgetserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -77,7 +77,7 @@ class ResetPassView(UpdateAPIView):
 
 class Sendotpphone(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [KnownUserRateThrottle]
 
     def post(self, request, *args, **kwargs):
        contact = request.data['contact']
@@ -97,7 +97,7 @@ class Sendotpphone(APIView):
 
 class VerifyPhoneOTP(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [KnownUserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         contact= str(request.data['contact'])
