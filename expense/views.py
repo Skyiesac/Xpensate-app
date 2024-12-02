@@ -176,7 +176,7 @@ class CategoryexpView(APIView):
             total=Coalesce(
                 Sum(
                     Case(
-                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=True, then=0),
                         When(is_credit=False, then=F('amount')),
                         default=Value(0),
                         output_field=DecimalField()
@@ -190,7 +190,7 @@ class CategoryexpView(APIView):
             total=Coalesce(
                 Sum(
                     Case(
-                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=True, then=0),
                         When(is_credit=False, then=F('amount')),
                         default=Value(0),
                         output_field=DecimalField()
@@ -304,8 +304,7 @@ class CreateBudgetView(APIView):
             serializer.save()
             return Response({
                 "success": "True",
-                "message": "Budget created or updated successfully!",
-                "data": serializer.data
+                "message": "Budget created or updated successfully!"
             }, status=status.HTTP_201_CREATED)
         return Response({
             "success": "False",
@@ -404,4 +403,23 @@ class BudgetFullView(APIView):
             "luxury_debit_total": luxury_debit_total,
             "needs_credit_total": needs_credit_total,
             "luxury_credit_total": luxury_credit_total
+        }, status=status.HTTP_200_OK)
+    
+class IncomexpenseView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        now = timezone.now()
+        current_year = now.year
+        current_month = now.month
+
+        monthly_expenses = expenses.objects.filter(user=user, date__year=current_year, date__month=current_month)
+        total_income = monthly_expenses.filter(is_credit=True).aggregate(total=Sum('amount'))['total'] or 0
+        total_expense = monthly_expenses.filter(is_credit=False).aggregate(total=Sum('amount'))['total'] or 0
+       
+        return Response({
+            "success": True,
+            "total_income": total_income,
+            "total_expense": total_expense,
         }, status=status.HTTP_200_OK)

@@ -37,5 +37,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         instance.need = validated_data.get('need', instance.need)
         instance.luxury = validated_data.get('luxury', instance.luxury)
         instance.savings = validated_data.get('savings', instance.savings)
+        if (instance.need +instance.luxury + instance.savings) !=100 :
+            raise serializers.ValidationError("Total budget must be 100 %")
         instance.save()
         return instance

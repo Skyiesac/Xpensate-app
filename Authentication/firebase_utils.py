@@ -19,7 +19,7 @@ def send_firebase_notification(fcm_token, title, body):
     """
     Sends a notification via Firebase Cloud Messaging API.
     """
-    url = "https://fcm.googleapis.com/v1/projects/xpensate-app/messages:send"  
+    url = "https://fcm.googleapis.com/v1/projects/xpensate-c82e9/messages:send"  
     payload = {
         "message": {
             "token": fcm_token,

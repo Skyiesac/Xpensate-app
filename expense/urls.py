@@ -14,4 +14,5 @@ urlpatterns = [
    path('last-fourexp/', views.LastFourExpensesView.as_view()),
    path('userbudget/', views.ListBudgetsView.as_view()),
     path('budgetexpenses/', views.BudgetFullView.as_view()),
+    path('incomeexpenses/', views.IncomexpenseView.as_view()),
    ]

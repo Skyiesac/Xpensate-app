@@ -108,7 +108,8 @@ AWS_STORAGE_BUCKET_NAME = 'xpensate-images'
 AWS_S3_REGION_NAME = 'ap-south-1'
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.ap-south-1.amazonaws.com'
 AWS_S3_FILE_OVERWRITE = False
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
 DATABASES={
     "default": dj_database_url.parse(config('DATABASE_URL'))
 }

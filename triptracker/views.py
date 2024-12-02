@@ -350,9 +350,9 @@ class DebtListView(APIView):
                     "error": "Invalid date format"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            debts = Debt.objects.filter(user=request.user, date__range=[start_date, end_date])
+            debts = Debt.objects.filter(user=request.user, date__range=[start_date, end_date]).order_by('-date', '-time')
         else:
-            debts = Debt.objects.filter(user=request.user)
+            debts = Debt.objects.filter(user=request.user).order_by('-date', '-time')
 
         serializer = DebtSerializer(debts, many=True)
         return Response({

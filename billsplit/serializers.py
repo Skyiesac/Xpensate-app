@@ -54,8 +54,12 @@ class BillSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         group = validated_data['group']
         billowner = request.user
-        
         participants_data = validated_data.pop('bill_participants', [])
+
+        total=sum(participant['amount'] for participant in participants_data)
+        if total !=100 :
+            raise serializers.ValidationError("Total must be 100")
+        
         bill = Bill.objects.create(
             billowner=billowner,
             **validated_data
