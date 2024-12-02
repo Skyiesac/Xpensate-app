@@ -18,10 +18,11 @@ class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
 
         def post(self, request, *args, **kwargs):
-            if not request.data['name']:
+            try:
+                name = request.data['name']
+            except:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
-            name = request.data['name']
             serializer= TripgroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 group=serializer.save()
@@ -133,7 +134,13 @@ class CreateexpView(APIView):
         user= trip_mem.user
         data = request.data.copy()
         data['group'] = group.id
-
+        try:
+            req=['paidby', 'whatfor', 'amount']
+        except:
+            return Response({
+                    "success": "False",
+                    "error": "All fields are required"
+                }, status=status.HTTP_400_BAD_REQUEST)
         serializer = AddedExpSerializer(data=data)
         if serializer.is_valid():
             with transaction.atomic():
@@ -168,7 +175,14 @@ class EditExpView(APIView):
 
     def put(self, request, id, *args, **kwargs):
         group = get_object_or_404(Tripgroup, id=id)
-        expense = get_object_or_404(addedexp, id=request.data['expense_id'], group=group)
+        try: 
+            expn= request.data['expense_id']
+        except:
+            return Response({
+                "success": "False",
+                "error": "Expense ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        expense = get_object_or_404(addedexp, id=expn, group=group)
 
         try:
             trip_mem = TripMember.objects.get(group=group, user=request.user)
@@ -213,6 +227,14 @@ class DeleteexpView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        try:
+            group_id = request.data['group_id']
+            exp_id = request.data['expense_id']
+        except:
+            return Response({
+                "success": "False",
+                "error": "Group ID and Expense ID are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         group = get_object_or_404(Tripgroup, id=request.data['group_id'])
         expen = get_object_or_404(addedexp, id=request.data['expense_id'], group=group)
 
@@ -372,15 +394,14 @@ class MarkDebtAsPaidView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        if not request.data.get('debt_id'):
+        try:
+         debt_id = request.data['debt_id']
+         debt = get_object_or_404(Debt, id=debt_id, user=request.user)
+        except:
             return Response({
                 "success": "False",
                 "error": "Debt ID is required"
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        debt_id = request.data['debt_id']
-        debt = get_object_or_404(Debt, id=debt_id, user=request.user)
-
         if debt.is_paid:
             return Response({
                 "success": "False",

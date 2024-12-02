@@ -341,7 +341,13 @@ class UsermonthlyView(APIView):
    permission_classes =[IsAuthenticated]
 
    def post(self, request , *args, **kwargs):
-        limit= request.data['monthlylimit']
+        try:
+         limit= request.data['monthlylimit']
+        except:
+            return Response({
+                "success":"False",
+                "error":"Value is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         if limit is None:
             return Response({
                 "success":"False",

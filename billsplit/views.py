@@ -191,12 +191,13 @@ class MarkAsPaidView(APIView):
                 "success": "False",
                 "error": "Only the bill owner can mark participants as paid"
             }, status=status.HTTP_403_FORBIDDEN)
-        if not request.data['email']:
+        try:
+         email=request.data['email']
+        except:
             return Response({
                 "success": "False",
-                "error": "Participant email is required"
+                "error": "Email is required"
             }, status=status.HTTP_400_BAD_REQUEST)
-        email=request.data['email']
         participant = get_object_or_404(User, email=email)
         
         billparticipant = get_object_or_404(BillParticipant, bill=bill, participant=participant)
@@ -249,14 +250,13 @@ class GroupMembersView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        print(1, *args, **kwargs)
-        if not request.data['group']:
+        try:
+         group_id = request.data['group']
+        except:
             return Response({
                 "success": False,
                 "error": "Group ID is required"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        group_id = request.data['group']
+            }, status=status.HTTP_404_NOT_FOUND)
         group = get_object_or_404(Group, id=group_id)
         group_members = GroupMember.objects.filter(group=group)
         serializer = GroupMembergetSerializer(group_members, many=True)
