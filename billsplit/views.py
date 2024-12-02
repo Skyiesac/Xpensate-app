@@ -37,7 +37,7 @@ class AddGroupView(CreateAPIView):
 
         def post(self, request, *args, **kwargs):
             try:
-             name = request.data['name']
+              name = request.data['name']
             except:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_404_NOT_FOUND)

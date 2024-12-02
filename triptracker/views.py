@@ -41,8 +41,9 @@ class JoinwcodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        invitecode = request.data['invitecode']
-        if not invitecode:
+        try:
+         invitecode = request.data['invitecode']
+        except:
             return Response({
                 "success": "False",
                 "error": "Invite code is required"
@@ -235,8 +236,14 @@ class SettlementView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        group_id = request.data['group_id']
-        exp_id=request.data['exp_id']
+        try:
+            group_id = request.data['group_id']
+            exp_id=request.data['exp_id']
+        except:
+            return Response({
+                "success": "False",
+                "error": "Group ID and Expense ID are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         addexp= get_object_or_404(addedexp, id=exp_id)
         user= request.user
         settlement = get_object_or_404(tosettle, group_id=group_id,connect=addexp, debter=user)

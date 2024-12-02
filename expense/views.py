@@ -34,10 +34,15 @@ class CreatexpView(CreateAPIView):
   
     def post(self,request, *args, **kwargs):
         data= request.data
-
-        category=data['category']
+        try:
+         category=data['category']
+        except:
+            return Response({ "success":"False",
+                'error':'Category not found'},status=status.HTTP_400_BAD_REQUEST)
+        
         if not re.match(r"^[A-Za-z\s]+$", category):
-           return Response({'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
+           return Response({ "success":"False",
+                            'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
         
         category= category.lower().capitalize()
         if category not in ['Food and Drinks', 'Shopping', 'Housing', 'Transportation', 'Life & Entertainment', 'Technical Appliance', 'Income', 'Investment', 'Others']:
@@ -73,17 +78,27 @@ class UpdateexpView(UpdateAPIView):
           expense = expenses.objects.get(id=id,user=request.user)
           serializer = ExpensesSerializer(expense)
           return Response(serializer.data)
-       return Response({
+       return Response({ "success":"False",
           "message":"This expense doesn't exist."
        },status=status.HTTP_404_NOT_FOUND)
     
     def put(self, request, id, *args, **kwargs):
-        expense= expenses.objects.get(id=id, user=request.user)
+        try:
+         expense= expenses.objects.get(id=id, user=request.user)
+        except:
+            return Response({
+                "success":"False",
+                "error":"This expense doesn't exist."
+            },status=status.HTTP_404_NOT_FOUND)
         data=request.data
-
-        category=data['category']
+        try:
+         category=data['category']
+        except:
+            return Response({ "success":"False",
+                'error':'Category not found'},status=status.HTTP_400_BAD_REQUEST)
         if not re.match(r"^[A-Za-z\s]+$", category):
-           return Response({'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
+           return Response({"success"  : "False",
+               'error':'Category must contain letters only !'},status=status.HTTP_400_BAD_REQUEST)
         
         category= category.lower().capitalize()
         if category not in['Food and Drinks', 'Shopping', 'Housing', 'Transportation', 'Life & Entertainment', 'Technical Appliance', 'Income', 'Investment', 'Others']:

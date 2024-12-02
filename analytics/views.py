@@ -29,9 +29,15 @@ class CurrencyConverterView(APIView):
 
 
       def post(self, request, *args, **kwargs):
-        from_currency= request.data['from_currency']
-        to_currency= request.data['to_currency']
-        money= request.data['money']
+        try:
+            from_currency= request.data['from_currency']
+            to_currency= request.data['to_currency']
+            money= request.data['money']
+        except:
+            return Response({
+                "success": False,
+                "error": "Data is missing!!"
+            }, status=status.HTTP_400_BAD_REQUEST)
         api_key=config('CURRENCY_API')
         
         if not all([from_currency, to_currency, money]):
