@@ -335,6 +335,7 @@ class ListBudgetsView(APIView):
         serializer = BudgetSerializer(budget)
         return Response({
             "success": True,
+            "monthly": request.user.monthlylimit,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
     

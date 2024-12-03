@@ -54,6 +54,7 @@ class BillSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         group = validated_data['group']
         billowner = request.user
+        billname=group.name
         participants_data = validated_data.pop('bill_participants', [])
 
         total=sum(participant['amount'] for participant in participants_data)
@@ -62,6 +63,7 @@ class BillSerializer(serializers.ModelSerializer):
         
         bill = Bill.objects.create(
             billowner=billowner,
+            billname=billname,
             **validated_data
         )
         bp = []
