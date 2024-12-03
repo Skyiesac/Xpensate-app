@@ -421,6 +421,7 @@ class BudgetFullView(APIView):
         
         return Response({
             "success": True,
+            "monthly": request.user.monthlylimit,
             "needs_debit_total": needs_debit_total,
             "luxury_debit_total": luxury_debit_total,
             "needs_credit_total": needs_credit_total,

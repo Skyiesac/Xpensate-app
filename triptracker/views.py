@@ -116,6 +116,30 @@ class AddRemovememView(APIView):
                 "success": "False",
                 "error":"Not a member of this group"
             }, status=status.HTTP_400_BAD_REQUEST)
+         
+class DeletegroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request,id, *args, **kwargs):
+       
+        try:
+            group = Tripgroup.objects.get(id=id)
+        except Tripgroup.DoesNotExist:
+            return Response({
+                "success": "False",
+                "error": "Invalid invite code"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if TripMember.objects.filter(group=group, user=request.user).exists():
+           group.delete()
+           return Response({ "success":"True",
+                            "message":"Group deleted successfully"}, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({
+                "success": "False",
+                "error":"You are not a member of this group"
+            }, status=status.HTTP_403_FORBIDDEN)
             
 #to create an expense and create settlements
 class CreateexpView(APIView):
@@ -500,3 +524,52 @@ class GroupAmountsView(APIView):
             "personshare":personamount
         }, status=status.HTTP_200_OK)
        
+class FullpayView(APIView):
+   permission_classes=[IsAuthenticated]
+
+   def post(self, request,id, *args, **kwargs):
+    group_id=id
+    try:
+        amount=request.data['amount']
+        email=request.data['email']
+    except:
+        return Response({
+            "success":"False",
+            "error":"Amount and Email are required"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    group=Tripgroup.objects.filter(id=group_id).first()
+    if group is None:
+        return Response({
+            "success":"False",
+            "error":"Group not found"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    user= get_object_or_404(User, email=email)
+    if not TripMember.objects.filter(group=group, user=user).exists():
+        return Response({
+            "success":"False",
+            "error":"User is not a member of this group"
+        }, status=status.HTTP_400_BAD_REQUEST)
+    if tosettle.objects.filter(group=group, debter=user, creditor=request.user, is_paid=False).exists():
+       tosettle.objects.filter(group=group, debter=user, creditor=request.user, is_paid=False).update(is_paid=True)
+
+       expenses.objects.create(user=user, amount= amount , category="Debts" )
+       expenses.objects.create(user=request.user, amount= amount , category="Debts" , is_credit=True)
+       return Response({
+            "success":"True",
+            "message":"Amount recieved successfully"
+        }, status=status.HTTP_200_OK)
+    elif tosettle.objects.filter(group=group, debter=request.user , creditor=user , is_paid=False).exists():
+        tosettle.objects.filter(group=group, debter=request.user, creditor=user, is_paid=False).update(is_paid=True)
+
+        expenses.objects.create(user=request.user, amount= amount , category="Debts" )
+        expenses.objects.create(user=user, amount= amount , category="Debts" , is_credit=True)
+        return Response({
+            "success":"True",
+            "message":"Debt paid successfully"
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            "success":"False",
+            "error":"No debt found between the users"
+        }, status=status.HTTP_400_BAD_REQUEST)
+      
