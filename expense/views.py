@@ -128,9 +128,10 @@ class UpdateexpView(UpdateAPIView):
        expense.delete()
        return Response({"success":"True",
                         'message': 'Expense deleted successfully'},
-                    status=status.HTTP_204_NO_CONTENT)
+                    status=status.HTTP_200_OK)
      except:
         return Response({
+           "success":"False",
           "message":"This expense doesn't exist."
        },status=status.HTTP_404_NOT_FOUND)
      
