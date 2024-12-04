@@ -373,6 +373,18 @@ class CreateDebtView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        data = request.data
+        name = data['name']
+        if len(name)<4 or len(name)>15:
+            return Response({
+                "success": "False",
+                "error": "Name must have at least 4 letters and 15 letters at max!"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if re.search(r'[^a-zA-Z\s]', name):
+            return Response({
+                "success": "False",
+                "error": "Name must have alphabets only!"
+            }, status=status.HTTP_400_BAD_REQUEST)
         serializer = DebtSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
