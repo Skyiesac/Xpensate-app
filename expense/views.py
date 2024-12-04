@@ -82,7 +82,7 @@ class UpdateexpView(UpdateAPIView):
           "message":"This expense doesn't exist."
        },status=status.HTTP_404_NOT_FOUND)
     
-    def put(self, request, id, *args, **kwargs):
+    def post(self, request, id, *args, **kwargs):
         try:
          expense= expenses.objects.get(id=id, user=request.user)
         except:

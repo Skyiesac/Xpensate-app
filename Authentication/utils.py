@@ -6,7 +6,15 @@ from xpensateapp.settings import EMAIL_HOST_USER
 import random
 import requests
 from decouple import config
+from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
+def logout_all_sessions(self, user):
+        tokens = OutstandingToken.objects.filter(user=user)
+        for token in tokens:
+            # Blacklist the token
+            _, _ = BlacklistedToken.objects.get_or_create(token=token)    
+            
 def normalize_email(email):
         
         email = email or ''
@@ -71,3 +79,5 @@ def send_otpphone(contact):
     response = requests.get(url)
     return otp
    
+# def logout_all_sessions(self, user):
+#         user.auth_token_set.all().delete()
