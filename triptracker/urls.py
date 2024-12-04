@@ -8,7 +8,7 @@ urlpatterns = [
     path('addexp/<int:id>/', CreateexpView.as_view()),
     path('editexp/<int:id>/', EditExpView.as_view()),
     path('deletexp/', DeleteexpView.as_view()),
-    path('deletgroup/', DeletegroupView.as_view()),
+    path('deletegroup/<int:id>/', DeletegroupView.as_view()),
     path('tripgroup/<int:id>/', GroupDetailsView.as_view()),
     path('tosettle/', SettlementView.as_view()),
     path('usergroups/',UserTripGroupsView.as_view()),

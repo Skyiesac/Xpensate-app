@@ -197,7 +197,7 @@ class CreateexpView(APIView):
 class EditExpView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, id, *args, **kwargs):
+    def post(self, request, id, *args, **kwargs):
         group = get_object_or_404(Tripgroup, id=id)
         try: 
             expn= request.data['expense_id']
@@ -561,23 +561,23 @@ class FullpayView(APIView):
             "success":"False",
             "error":"User is not a member of this group"
         }, status=status.HTTP_400_BAD_REQUEST)
+    cnt=0 # counter
     if tosettle.objects.filter(group=group, debter=user, creditor=request.user, is_paid=False).exists():
        tosettle.objects.filter(group=group, debter=user, creditor=request.user, is_paid=False).update(is_paid=True)
-
-       expenses.objects.create(user=user, amount= amount , category="Debts" )
-       expenses.objects.create(user=request.user, amount= amount , category="Debts" , is_credit=True)
-       return Response({
-            "success":"True",
-            "message":"Amount recieved successfully"
-        }, status=status.HTTP_200_OK)
-    elif tosettle.objects.filter(group=group, debter=request.user , creditor=user , is_paid=False).exists():
+       cnt+=1
+    if tosettle.objects.filter(group=group, debter=request.user , creditor=user , is_paid=False).exists():
         tosettle.objects.filter(group=group, debter=request.user, creditor=user, is_paid=False).update(is_paid=True)
-
-        expenses.objects.create(user=request.user, amount= amount , category="Debts" )
-        expenses.objects.create(user=user, amount= amount , category="Debts" , is_credit=True)
+        cnt+=1
+    if cnt>0:
+        if amount>0: #user is getting money
+            expenses.objects.create(user=user, amount= amount , category="Debts" )  
+            expenses.objects.create(user=request.user, amount= amount , category="Debts" , is_credit=True)
+        else:
+           expenses.objects.create(user=request.user, amount= abs(amount) , category="Debts" )  
+           expenses.objects.create(user=user, amount= abs(amount) , category="Debts" , is_credit=True)
         return Response({
             "success":"True",
-            "message":"Debt paid successfully"
+            "message":"Debt settled successfully"
         }, status=status.HTTP_200_OK)
     else:
         return Response({
