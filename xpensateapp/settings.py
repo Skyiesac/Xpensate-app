@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework_simplejwt.token_blacklist',
     'cloudinary_storage',
     'cloudinary',
     'corsheaders',
@@ -217,6 +216,6 @@ CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BEAT_SCHEDULE = {
     'send-daily-notifications': {
         'task': 'Authentication.tasks.send_daily_notifications',
-        'schedule': crontab(hour=23, minute=45),  
+        'schedule': crontab(hour=23, minute=55),  
     },
 } 

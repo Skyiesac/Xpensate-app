@@ -7,16 +7,8 @@ import random
 import requests
 from decouple import config
 from rest_framework.authtoken.models import Token
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-def logout_all_sessions(self, user):
-        if self.request.data.get('all'):
-            for token in OutstandingToken.objects.filter(user=user):
-                _, _ = BlacklistedToken.objects.get_or_create(token=token)
-        refresh_token = self.request.data.get('refresh_token')
-        token = RefreshToken(token=refresh_token)
-        token.blacklist()
    
 def normalize_email(email):
         

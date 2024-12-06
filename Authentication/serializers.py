@@ -173,7 +173,7 @@ class ResetPassSerializer(serializers.Serializer):
      message= serializers.CharField(read_only=True)
 
      def validate(self, attrs):
-        logout_all_sessions(self, user)
+        # logout_all_sessions(self, user)
         attrs['email']= normalize_email(attrs['email'])
         if not strong_pass(attrs['new_password']):
             raise serializers.ValidationError({"password": "Password isn't strong enough."})
@@ -200,7 +200,7 @@ class ResetPassSerializer(serializers.Serializer):
             user = self.validated_data['user']
             user.set_password(self.validated_data['new_password'])
             user.save()
-            logout_all_sessions(self, user)
+            # logout_all_sessions(self, user)
             EmailOTP.objects.get(email = self.validated_data['email'] ).delete()
             return user 
 
