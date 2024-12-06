@@ -120,14 +120,14 @@ class AddRemovememView(APIView):
 class DeletegroupView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request,id, *args, **kwargs):
+    def delete(self, request,id, *args, **kwargs):
        
         try:
             group = Tripgroup.objects.get(id=id)
         except Tripgroup.DoesNotExist:
             return Response({
                 "success": "False",
-                "error": "Invalid invite code"
+                "error": "Invalid group id"
             }, status=status.HTTP_404_NOT_FOUND)
 
         if TripMember.objects.filter(group=group, user=request.user).exists():

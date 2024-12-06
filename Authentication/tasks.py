@@ -5,20 +5,26 @@ from django.db.models import Sum, Case, When, F, Value, DecimalField
 from .models import *
 from expense.models import expenses
 from .firebase_utils import send_firebase_notification  
+from django.db.models.functions import Coalesce
+from decimal import Decimal
 
 def total_expense(user):
     today = timezone.now().date()
-    expenses = expenses.objects.filter(user=user, date=today).aggregate(
-        total=Sum(
-            Case(
-                When(is_credit=True, then=-F('amount')),
-                When(is_credit=False, then=F('amount')),
-                default=Value(0),
-                output_field=DecimalField()
+    expense = expenses.objects.filter(user=user, date=today)
+    total_expenses = expense.aggregate(
+            total= Coalesce(
+                Sum(
+                    Case(
+                        When(is_credit=True, then=-F('amount')),
+                        When(is_credit=False, then=F('amount')),
+                        default=Value(0),
+                        output_field=DecimalField()
+                    )
+                ),
+                Value(0, output_field=DecimalField())
             )
-        )
-    )['total']
-    return total_expense or Decimal('0.00')
+        )['total']
+    return total_expenses or Decimal('0.00')
     
 
 @shared_task
