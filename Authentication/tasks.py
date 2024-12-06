@@ -33,10 +33,10 @@ def send_daily_notifications():
     print("Sending daily notifications")
     tokens= FCMToken.objects.all()
     for tokenuser in tokens:
-        total_exp = total_exp(tokenuser.user)
-        if(total_exp==0):
+        total = total_exp(tokenuser.user)
+        if(total==0):
             send_firebase_notification(tokenuser.fcm_token, "We missed you today at Xpensate", "You have no expenses today.")
-        elif(total_exp>0):
+        elif(total>0):
            send_firebase_notification(tokenuser.fcm_token, "Quick reminder from Xpensate", f"Today's expenses totaled- {total_exp}.Keep an eye on your budget.")
         else:
            send_firebase_notification(tokenuser.fcm_token, "Quick reminder from Xpensate", f"Yay! you earned {total_exp} today. Keep up the good work.")
