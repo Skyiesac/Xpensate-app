@@ -217,6 +217,6 @@ CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BEAT_SCHEDULE = {
     'send-daily-notifications': {
         'task': 'Authentication.tasks.send_daily_notifications',
-        'schedule': crontab(hour=23, minute=0),  
+        'schedule': crontab(hour=23, minute=45),  
     },
 } 

@@ -195,8 +195,7 @@ class UpdateProfilepicView(APIView):
             serializer.save()
             return Response({
                 "success": "True",
-                "message": "Profile image updated successfully.",
-                "data": serializer.data
+                "message": "Profile image updated successfully."
             }, status=status.HTTP_200_OK)
         
         return Response({

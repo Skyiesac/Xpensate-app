@@ -14,6 +14,7 @@ from django.utils.dateparse import parse_date
 from django.db import transaction
 from expense.models import expenses
 #To create a group 
+
 class CreateGroupView(APIView):
         permission_classes = [IsAuthenticated]
 
@@ -23,6 +24,17 @@ class CreateGroupView(APIView):
             except:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+            if len(name)<3 or len(name)>15:
+                return Response({
+                    "success": "False",
+                    "error": "Group name must have at least 3 letters and 15 letters at max!"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if Tripgroup.objects.filter(name=name, tripmember__user=request.user).exists():
+               return Response({
+                "success": "False",
+                "error": "You already have a group with this name."
+               }, status=status.HTTP_400_BAD_REQUEST)
+
             serializer= TripgroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 group=serializer.save()
@@ -85,7 +97,7 @@ class AddRemovememView(APIView):
          if TripMember.objects.filter(group=group, user=user).exists():
             return Response({
                 "success": "False",
-                "error":"Already a member of this group"
+                "error":" You are already a member of this group"
             }, status=status.HTTP_400_BAD_REQUEST)
          
          invite_email(email,group.invitecode, group.name)
@@ -447,9 +459,9 @@ class MarkDebtAsPaidView(APIView):
         debt.is_paid = True
         debt.save()
         if debt.lend is False:
-          expenses.objects.create(user=request.user, amount= debt.amount , category="Debts" )
+          expenses.objects.create(user=request.user, amount= debt.amount/request.user.currency_rate , category="Debts" )
         else:
-            expenses.objects.create(user=request.user, amount= debt.amount , category="Debts" , is_credit=True)
+            expenses.objects.create(user=request.user, amount= debt.amount/request.user.currency_rate , category="Debts" , is_credit=True)
         serializer = DebtSerializer(debt)
         return Response({
             "success": "True",
@@ -570,11 +582,11 @@ class FullpayView(APIView):
         cnt+=1
     if cnt>0:
         if amount>0: #user is getting money
-            expenses.objects.create(user=user, amount= amount , category="Debts" )  
-            expenses.objects.create(user=request.user, amount= amount , category="Debts" , is_credit=True)
+            expenses.objects.create(user=user, amount= amount/request.user.currency_rate , category="Debts" )  
+            expenses.objects.create(user=request.user, amount= amount/request.user.currency_rate , category="Debts" , is_credit=True)
         else:
-           expenses.objects.create(user=request.user, amount= abs(amount) , category="Debts" )  
-           expenses.objects.create(user=user, amount= abs(amount) , category="Debts" , is_credit=True)
+           expenses.objects.create(user=request.user, amount= abs(amount)/request.user.currency_rate , category="Debts" )  
+           expenses.objects.create(user=user, amount= abs(amount)/request.user.currency_rate , category="Debts" , is_credit=True)
         return Response({
             "success":"True",
             "message":"Debt settled successfully"

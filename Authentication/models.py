@@ -118,3 +118,7 @@ class FCMToken(models.Model):
 
     def __str__(self):
         return f"{self.user.email}"
+    
+#unique title for each 
+# dummy data nd postman 
+#currency rate

@@ -108,6 +108,10 @@ class DebtSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
         validated_data['user'] = user
+
+        currency_rate = user.currency_rate
+        validated_data['amount'] = validated_data['amount'] / currency_rate
+
         return super().create(validated_data)
     
 class TripgroupSummarySerializer(serializers.ModelSerializer):

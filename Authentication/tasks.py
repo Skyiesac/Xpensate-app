@@ -8,10 +8,10 @@ from .firebase_utils import send_firebase_notification
 from django.db.models.functions import Coalesce
 from decimal import Decimal
 
-def total_expense(user):
+def total_exp(user):
     today = timezone.now().date()
-    expense = expenses.objects.filter(user=user, date=today)
-    total_expenses = expense.aggregate(
+    exp = expenses.objects.filter(user=user, date=today)
+    total_exp = exp.aggregate(
             total= Coalesce(
                 Sum(
                     Case(
@@ -24,7 +24,7 @@ def total_expense(user):
                 Value(0, output_field=DecimalField())
             )
         )['total']
-    return total_expenses or Decimal('0.00')
+    return total_exp or Decimal('0.00')
     
 
 @shared_task
@@ -33,7 +33,7 @@ def send_daily_notifications():
     print("Sending daily notifications")
     tokens= FCMToken.objects.all()
     for tokenuser in tokens:
-        total_exp = total_expense(tokenuser.user)
+        total_exp = total_exp(tokenuser.user)
         if(total_exp==0):
             send_firebase_notification(tokenuser.fcm_token, "We missed you today at Xpensate", "You have no expenses today.")
         elif(total_exp>0):

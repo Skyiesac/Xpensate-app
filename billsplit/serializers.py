@@ -78,7 +78,7 @@ class BillSerializer(serializers.ModelSerializer):
             b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
-                amount=((percent/100) * bill.amount)/request.user.currency_rate,
+                amount=((percent * bill.amount)/100)/request.user.currency_rate,
                
             )
             Debt.objects.create(amount=((percent/100) * bill.amount)/request.user.currency_rate, user=participant_user, name=billowner, description="Bill payment")

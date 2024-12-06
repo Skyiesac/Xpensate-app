@@ -17,8 +17,8 @@ class AllGroupsView(APIView):
   permission_classes = [IsAuthenticated]  
 
   def get(self,request, *args, **kwargs):
-    groups = Group.objects.filter(groupowner=request.user).annotate(member_count=Count('groupmember')).select_related('groupowner')
-    othergrps = Group.objects.exclude(groupowner=request.user).filter(groupmember__member=request.user).select_related('groupowner').annotate(member_count=Count('groupmember'))
+    groups = Group.objects.filter(groupowner=request.user).annotate(member_count=Count('groupmember')).select_related('groupowner').order_by('-created_at')
+    othergrps = Group.objects.exclude(groupowner=request.user).filter(groupmember__member=request.user).select_related('groupowner').annotate(member_count=Count('groupmember')).order_by('-created_at')
     
     groups_serializer = GroupSerializer(groups, many=True)
     othergroups_serializer = GroupSerializer(othergrps, many=True)
@@ -41,6 +41,17 @@ class AddGroupView(CreateAPIView):
             except:
                 return Response({ "success" : "False",
                     "error": "Group name cannot be empty"}, status=status.HTTP_404_NOT_FOUND)
+            if len(name)<3 or len(name)>15:
+                return Response({
+                    "success": "False",
+                    "error": "Group name must have at least 3 letters and 15 letters at max!"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if Group.objects.filter(name=name, groupowner=request.user).exists() or Group.objects.filter(name=name, members=request.user).exists():
+              return Response({
+                "success": "False",
+                "error": "You already have a group with same name."
+               }, status=status.HTTP_400_BAD_REQUEST)
+ 
             serializer= GroupSerializer(data=request.data,  context={'request': request})
             if serializer.is_valid():
                 serializer.save(groupowner=request.user)
@@ -105,9 +116,10 @@ class AddMemberView(APIView):
                     "error": serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+ #to remove the member from the group  
 class RemovememberView(APIView):
         permission_classes = [IsAuthenticated]
-        #to remove the member from the group  
+       
         def delete(self, request, id,email , *args, **kwargs):
             group_id = id
             group = Group.objects.get(id=group_id)

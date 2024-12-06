@@ -58,7 +58,7 @@ def email_for_paying(email,member, amount, why):
      subject=f"{amount} credited into your account"
      message = f"""
 Hello user,
-This is to inform you that {member} user has paid you the amount of {amount}  INR. 
+This is to inform you that {member} user has paid you the amount of {amount}  INR for {why}. 
 (PS: This transaction is only virtual as for now , not appropriate for any legal purposes)
 
 By-
