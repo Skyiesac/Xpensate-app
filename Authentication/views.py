@@ -227,10 +227,7 @@ class TestNotificationView(APIView):
 
         try:
             response = send_firebase_notification(
-                fcm_token=fcm_token,
-                title="Test Notification",
-                body="This is a test message from Firebase Cloud Messaging."
-            )
+                 )
             return Response({'message': 'Notification sent successfully.', 'response': response})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
