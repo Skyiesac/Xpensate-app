@@ -58,6 +58,10 @@ class BillSerializer(serializers.ModelSerializer):
         participants_data = validated_data.pop('bill_participants', [])
 
         total=sum(participant['amount'] for participant in participants_data)
+        for participant in participants_data:
+           if participant['amount'] < 0:
+             raise serializers.ValidationError("Participant's amount must not be negative")
+
         if total !=100 :
             raise serializers.ValidationError("Total must be 100")
         

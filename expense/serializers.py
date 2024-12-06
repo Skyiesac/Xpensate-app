@@ -16,7 +16,8 @@ class ExpensesSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
         currency_rate = user.currency_rate 
-
+        if validated_data['amount'] < 0:
+            raise serializers.ValidationError("Amount must not be negative")
         validated_data['amount'] = validated_data['amount'] / currency_rate
 
         return super().create(validated_data)
@@ -31,6 +32,11 @@ class BudgetSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user
         validated_data['user'] = user
+        if validated_data['need'] < 0 or validated_data['luxury'] < 0 or validated_data['savings'] < 0:
+            raise serializers.ValidationError("Budget values must not be negative")
+        if (validated_data['need'] + validated_data['luxury'] + validated_data['savings']) != 100:
+            raise serializers.ValidationError("Total budget must be 100%")
+
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
