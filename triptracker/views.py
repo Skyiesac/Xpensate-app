@@ -191,7 +191,7 @@ class CreateexpView(APIView):
                             group=group,
                             debter=member.user,
                             creditor=user,
-                            debtamount=debt_amount/user.currency_rate,
+                            debtamount=debt_amount,
                             connect=added_exp
                         )
 
@@ -244,7 +244,7 @@ class EditExpView(APIView):
                                 group=group,
                                 debter=member.user,
                                 creditor=updated_exp.paidby,
-                                debtamount=new_debt_amount/request.user.currency_rate,
+                                debtamount=new_debt_amount,
                                 connect=updated_exp
                             )
            
@@ -459,9 +459,9 @@ class MarkDebtAsPaidView(APIView):
         debt.is_paid = True
         debt.save()
         if debt.lend is False:
-          expenses.objects.create(user=request.user, amount= debt.amount/request.user.currency_rate , category="Debts" )
+          expenses.objects.create(user=request.user, amount= debt.amount , category="Debts" )
         else:
-            expenses.objects.create(user=request.user, amount= debt.amount/request.user.currency_rate , category="Debts" , is_credit=True)
+            expenses.objects.create(user=request.user, amount= debt.amount, category="Debts" , is_credit=True)
         serializer = DebtSerializer(debt)
         return Response({
             "success": "True",
@@ -582,11 +582,11 @@ class FullpayView(APIView):
         cnt+=1
     if cnt>0:
         if amount>0: #user is getting money
-            expenses.objects.create(user=user, amount= amount/request.user.currency_rate , category="Debts" )  
-            expenses.objects.create(user=request.user, amount= amount/request.user.currency_rate , category="Debts" , is_credit=True)
+            expenses.objects.create(user=user, amount= amount , category="Debts" )  
+            expenses.objects.create(user=request.user, amount= amount, category="Debts" , is_credit=True)
         else:
-           expenses.objects.create(user=request.user, amount= abs(amount)/request.user.currency_rate , category="Debts" )  
-           expenses.objects.create(user=user, amount= abs(amount)/request.user.currency_rate , category="Debts" , is_credit=True)
+           expenses.objects.create(user=request.user, amount= abs(amount) , category="Debts" )  
+           expenses.objects.create(user=user, amount= abs(amount) , category="Debts" , is_credit=True)
         return Response({
             "success":"True",
             "message":"Debt settled successfully"

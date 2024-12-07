@@ -216,10 +216,10 @@ class MarkAsPaidView(APIView):
         billparticipant.paid = True
         billparticipant.save()
         if billparticipant.participant == bill.billowner:
-            expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
+            expenses.objects.create(user=participant, amount=billparticipant.amount, category="Bill Payment", is_credit=False)
         else:
-            expenses.objects.create(user=participant, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=False)
-            expenses.objects.create(user=bill.billowner, amount=billparticipant.amount/billparticipant.participant.currency_rate, category="Bill Payment", is_credit=True)
+            expenses.objects.create(user=participant, amount=billparticipant.amount, category="Bill Payment", is_credit=False)
+            expenses.objects.create(user=bill.billowner, amount=billparticipant.amount, category="Bill Payment", is_credit=True)
         email_for_paying(bill.billowner.email, email, billparticipant.amount , "Bill expenses" )
         return Response({
             "success": "True",

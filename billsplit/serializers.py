@@ -76,16 +76,16 @@ class BillSerializer(serializers.ModelSerializer):
             participant_user = get_object_or_404(User, email=email)
 
             if not GroupMember.objects.filter(group=group, member=participant_user).exists():
-                continue 
+                GroupMember.objects.create(group=group, member=participant_user)
 
             percent=participant_data['amount']
             b = BillParticipant.objects.create(
                 bill=bill,
                 participant=participant_user,
-                amount=((percent * bill.amount)/100)/request.user.currency_rate,
+                amount=((percent * bill.amount)/100),
                
             )
-            Debt.objects.create(amount=((percent/100) * bill.amount)/request.user.currency_rate, user=participant_user, name=billowner, description="Bill payment")
+            Debt.objects.create(amount=((percent/100) * bill.amount), user=participant_user, name=billowner, description="Bill payment")
             bp += [b]
        
         validated_data["bill_participants"] = bp

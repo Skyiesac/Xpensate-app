@@ -110,7 +110,7 @@ class DebtSerializer(serializers.ModelSerializer):
         validated_data['user'] = user
 
         currency_rate = user.currency_rate
-        validated_data['amount'] = validated_data['amount'] / currency_rate
+        validated_data['amount'] = validated_data['amount']
 
         return super().create(validated_data)
     

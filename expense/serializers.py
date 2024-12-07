@@ -18,7 +18,7 @@ class ExpensesSerializer(serializers.ModelSerializer):
         currency_rate = user.currency_rate 
         if validated_data['amount'] < 0:
             raise serializers.ValidationError("Amount must not be negative")
-        validated_data['amount'] = validated_data['amount'] / currency_rate
+        validated_data['amount'] = validated_data['amount'] 
 
         return super().create(validated_data)
     
