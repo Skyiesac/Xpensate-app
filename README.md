@@ -32,7 +32,7 @@ Xpensate is a user-friendly application designed to help individuals manage thei
     ```
 - Access the application at http://127.0.0.1:8000/
 
--To run the project in docker:
+- To run the project in docker:
    ```
    docker-compose up --build
    ```
@@ -54,7 +54,7 @@ Xpensate is a user-friendly application designed to help individuals manage thei
   - AWS S3 for media storage
 
 
-##Key features
+## Key features
 
 
 ### 1. Authentication & User Management
