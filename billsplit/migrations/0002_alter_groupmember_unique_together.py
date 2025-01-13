@@ -7,13 +7,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('billsplit', '0001_initial'),
+        ("billsplit", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='groupmember',
-            unique_together={('member', 'group')},
+            name="groupmember",
+            unique_together={("member", "group")},
         ),
     ]

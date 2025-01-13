@@ -6,22 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Authentication', '0001_initial'),
+        ("Authentication", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Register_user',
+            name="Register_user",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(max_length=255, unique=True)),
-                ('created_time', models.DateTimeField(auto_now_add=True)),
-                ('password', models.CharField(max_length=8)),
-                ('otp', models.IntegerField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email", models.EmailField(max_length=255, unique=True)),
+                ("created_time", models.DateTimeField(auto_now_add=True)),
+                ("password", models.CharField(max_length=8)),
+                ("otp", models.IntegerField(blank=True, null=True)),
             ],
         ),
         migrations.AlterModelOptions(
-            name='emailotp',
+            name="emailotp",
             options={},
         ),
     ]

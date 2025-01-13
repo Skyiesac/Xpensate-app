@@ -7,18 +7,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Authentication', '0002_register_user_alter_emailotp_options'),
+        ("Authentication", "0002_register_user_alter_emailotp_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='register_user',
-            name='confirm_password',
-            field=models.CharField(max_length=50, null=True, validators=[django.core.validators.MinLengthValidator(8, 'Password must have 8 letters')]),
+            model_name="register_user",
+            name="confirm_password",
+            field=models.CharField(
+                max_length=50,
+                null=True,
+                validators=[
+                    django.core.validators.MinLengthValidator(
+                        8, "Password must have 8 letters"
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='register_user',
-            name='password',
-            field=models.CharField(max_length=50, null=True, validators=[django.core.validators.MinLengthValidator(8, 'Password must have 8 letters')]),
+            model_name="register_user",
+            name="password",
+            field=models.CharField(
+                max_length=50,
+                null=True,
+                validators=[
+                    django.core.validators.MinLengthValidator(
+                        8, "Password must have 8 letters"
+                    )
+                ],
+            ),
         ),
     ]

@@ -9,23 +9,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expense', '0002_expenses_time_alter_category_name_and_more'),
+        ("expense", "0002_expenses_time_alter_category_name_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='expenses',
-            name='is_credit',
+            model_name="expenses",
+            name="is_credit",
             field=models.BooleanField(default=False),
         ),
         migrations.AlterField(
-            model_name='expenses',
-            name='amount',
-            field=models.DecimalField(decimal_places=2, max_digits=9, validators=[django.core.validators.MinValueValidator(Decimal('1.00'))]),
+            model_name="expenses",
+            name="amount",
+            field=models.DecimalField(
+                decimal_places=2,
+                max_digits=9,
+                validators=[django.core.validators.MinValueValidator(Decimal("1.00"))],
+            ),
         ),
         migrations.AlterField(
-            model_name='expenses',
-            name='time',
+            model_name="expenses",
+            name="time",
             field=models.TimeField(default=datetime.time(22, 47, 19, 466886)),
         ),
     ]

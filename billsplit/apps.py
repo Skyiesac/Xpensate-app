@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class BillsplitConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'billsplit'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "billsplit"

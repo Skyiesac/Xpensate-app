@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('triptracker', '0001_initial'),
+        ("triptracker", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tosettle',
-            name='connect',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='triptracker.addedexp'),
+            model_name="tosettle",
+            name="connect",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="triptracker.addedexp",
+            ),
         ),
     ]

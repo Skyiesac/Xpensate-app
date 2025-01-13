@@ -7,13 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expense', '0008_alter_expenses_time'),
+        ("expense", "0008_alter_expenses_time"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='expenses',
-            name='time',
+            model_name="expenses",
+            name="time",
             field=models.TimeField(default=datetime.time(17, 12, 48, 79348)),
         ),
     ]

@@ -6,17 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Authentication', '0006_phoneotp_user_appassword_user_contact_user_currency_and_more'),
+        (
+            "Authentication",
+            "0006_phoneotp_user_appassword_user_contact_user_currency_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='user',
-            name='appassword',
+            model_name="user",
+            name="appassword",
         ),
         migrations.AddField(
-            model_name='user',
-            name='currency_rate',
+            model_name="user",
+            name="currency_rate",
             field=models.DecimalField(decimal_places=6, default=1, max_digits=10),
         ),
     ]

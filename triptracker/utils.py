@@ -5,15 +5,16 @@ import re
 from django.conf import settings
 from xpensateapp.settings import EMAIL_HOST_USER
 
+
 def generate_invite_code(length=8):
     characters = string.ascii_letters + string.digits
-    code = ''.join(random.choices(characters, k=length))
+    code = "".join(random.choices(characters, k=length))
     return code
 
 
 def email_for_joining(email, name):
-     subject=f"Welcome to {name}"
-     message = f"""
+    subject = f"Welcome to {name}"
+    message = f"""
 Hello user,
 
 Welcome to your new Xpensate group "{name}" !
@@ -31,15 +32,16 @@ Let's make group expenses a breeze!
 By-
 The Xpensate team
 """
-     
-     from_email = settings.EMAIL_HOST_USER
-     recipient_list = [email]
 
-     return send_mail(subject, message, from_email , recipient_list)
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [email]
 
-def invite_email(email,invitecode, name):
-     subject=f"Welcome to {name}"
-     message = f"""
+    return send_mail(subject, message, from_email, recipient_list)
+
+
+def invite_email(email, invitecode, name):
+    subject = f"Welcome to {name}"
+    message = f"""
 Hello user,
 This is an invite mail sent to you for joing {name} group on Xpensate. 
 invite code is -{invitecode}
@@ -48,15 +50,16 @@ Fill this code on the app to join this cool group !
 By-
 The Xpensate team
 """
-     
-     from_email = settings.EMAIL_HOST_USER
-     recipient_list = [email]
 
-     return send_mail(subject, message, from_email , recipient_list)
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [email]
 
-def email_for_paying(email,member, amount, why):
-     subject=f"{amount} credited into your account"
-     message = f"""
+    return send_mail(subject, message, from_email, recipient_list)
+
+
+def email_for_paying(email, member, amount, why):
+    subject = f"{amount} credited into your account"
+    message = f"""
 Hello user,
 This is to inform you that {member} user has paid you the amount of {amount}  INR for {why}. 
 (PS: This transaction is only virtual as for now , not appropriate for any legal purposes)
@@ -64,8 +67,8 @@ This is to inform you that {member} user has paid you the amount of {amount}  IN
 By-
 The Xpensate team
 """
-     
-     from_email = settings.EMAIL_HOST_USER
-     recipient_list = [email]
 
-     return send_mail(subject, message, from_email , recipient_list)
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [email]
+
+    return send_mail(subject, message, from_email, recipient_list)

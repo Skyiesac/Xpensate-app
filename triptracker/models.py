@@ -4,12 +4,14 @@ from django.core.validators import MinValueValidator
 from .utils import generate_invite_code
 from decimal import Decimal
 from datetime import date, datetime
+
 # Create your models here.
+
 
 class Tripgroup(models.Model):
     name = models.CharField(max_length=50)
     members = models.ManyToManyField(User, through="TripMember")
-    invitecode= models.CharField(max_length=8, unique=True, blank=True, null=True)
+    invitecode = models.CharField(max_length=8, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -17,41 +19,55 @@ class Tripgroup(models.Model):
             self.invitecode = generate_invite_code()
         super().save(*args, **kwargs)
 
+
 class TripMember(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'group')
+        unique_together = ("user", "group")
+
 
 class addedexp(models.Model):
     group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE)
-    whatfor= models.CharField(max_length= 20)
-    amount= models.DecimalField(max_digits=10, decimal_places=2 , validators=[MinValueValidator(Decimal("1.00"))])
-    paidby= models.ForeignKey(User, on_delete=models.CASCADE)
-    
+    whatfor = models.CharField(max_length=20)
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("1.00"))]
+    )
+    paidby = models.ForeignKey(User, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.whatfor
-    
+
+
 class tosettle(models.Model):
-     group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE , null=True)
-     debtamount=models.DecimalField(max_digits=10, decimal_places=2 , validators=[MinValueValidator(Decimal("1.00"))])
-     debter=models.ForeignKey(User, on_delete=models.CASCADE ,  related_name='debter_set')   #will pay
-     creditor=models.ForeignKey(User, on_delete=models.CASCADE , related_name='creditor_set') #paid alr
-     connect = models.ForeignKey(addedexp, on_delete=models.CASCADE, null=True) 
-     is_paid= models.BooleanField(default=False)
-     def __str__(self):
+    group = models.ForeignKey(Tripgroup, on_delete=models.CASCADE, null=True)
+    debtamount = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("1.00"))]
+    )
+    debter = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="debter_set"
+    )  # will pay
+    creditor = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="creditor_set"
+    )  # paid alr
+    connect = models.ForeignKey(addedexp, on_delete=models.CASCADE, null=True)
+    is_paid = models.BooleanField(default=False)
+
+    def __str__(self):
         return f"{self.debter} owes {self.creditor} "
-     
+
 
 class Debt(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  
-    name = models.CharField(max_length=255)  #topay
-    amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("1.00"))])
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)  # topay
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("1.00"))]
+    )
     description = models.CharField(max_length=255, blank=True)
-    date= models.DateField(default=date.today)
-    time= models.TimeField(default=datetime.now().time())
+    date = models.DateField(default=date.today)
+    time = models.TimeField(default=datetime.now().time())
     lend = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
 

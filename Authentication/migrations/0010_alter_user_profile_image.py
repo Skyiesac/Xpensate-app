@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Authentication', '0009_fcmtoken'),
+        ("Authentication", "0009_fcmtoken"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='profile_image',
-            field=models.FileField(blank=True, null=True, upload_to='profile_pics/'),
+            model_name="user",
+            name="profile_image",
+            field=models.FileField(blank=True, null=True, upload_to="profile_pics/"),
         ),
     ]

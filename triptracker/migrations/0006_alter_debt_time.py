@@ -7,13 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('triptracker', '0005_alter_debt_time'),
+        ("triptracker", "0005_alter_debt_time"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='debt',
-            name='time',
+            model_name="debt",
+            name="time",
             field=models.TimeField(default=datetime.time(14, 5, 34, 335016)),
         ),
     ]

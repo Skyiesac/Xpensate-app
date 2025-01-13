@@ -8,28 +8,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expense', '0001_initial'),
+        ("expense", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='expenses',
-            name='time',
+            model_name="expenses",
+            name="time",
             field=models.TimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='name',
+            model_name="category",
+            name="name",
             field=models.CharField(max_length=50),
         ),
         migrations.AlterField(
-            model_name='expenses',
-            name='date',
+            model_name="expenses",
+            name="date",
             field=models.DateField(default=datetime.date.today),
         ),
         migrations.AlterField(
-            model_name='expenses',
-            name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='upload_pics/'),
+            model_name="expenses",
+            name="image",
+            field=models.ImageField(blank=True, null=True, upload_to="upload_pics/"),
         ),
     ]
